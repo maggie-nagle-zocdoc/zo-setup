@@ -1,0 +1,13 @@
+{
+  "name": "zo-setup",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Guided setup flow for Zo — Zocdoc's AI phonebot",
+  "scripts": {
+    "dev": "cd vibezz && npm run dev -- -p 3080",
+    "build": "cd vibezz && npm run build",
+    "start": "cd vibezz && npm run start",
+    "lint": "cd vibezz && npm run lint",
+    "postinstall": "cd vibezz && npm install"
+  }
+}
