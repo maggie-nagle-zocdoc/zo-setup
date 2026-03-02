@@ -1,0 +1,31 @@
+# Vibezz Design System — Cursor
+
+Read and follow all instructions in [INSTRUCTIONS.md](INSTRUCTIONS.md).
+
+## Key Rules
+
+- **NEVER** modify files in `src/components/vibezz/` unless explicitly asked
+- **NEVER** create custom components — use existing Vibezz components
+- **NEVER** use `font-bold` — only `font-semibold` and `font-medium`
+- **NEVER** use hardcoded hex colors — use CSS variables
+- **ALWAYS** import from `@/components/vibezz`
+- **ALWAYS** query the MCP server when unsure about a component
+
+## MCP Server
+
+The Vibezz MCP server is configured for this project. Use it to:
+- Look up component props, variants, and usage
+- Generate accurate code for any component
+- Access design tokens (colors, typography, spacing)
+- Search for components by use case
+- Get starter page templates
+
+**When unsure about a component, query the MCP server first.**
+
+If the MCP server is not yet configured, run:
+
+```bash
+npm run setup:mcp
+```
+
+Then restart Cursor (Cmd+Shift+P > "Reload Window" or quit and reopen).

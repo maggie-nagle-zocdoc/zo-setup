@@ -1,0 +1,25 @@
+{
+  "name": "@vibezz/mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for Vibezz Design System - exposes components, tokens, and code generation to AI assistants",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "vibezz-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

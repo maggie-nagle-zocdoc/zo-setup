@@ -1,0 +1,203 @@
+/* Mezzanine Design Tokens
+ * Generated from design-tokens.tokens.json
+ * Radix-compatible breakpoints included
+ */
+
+/* Note: Roboto Flex is loaded via next/font/google in layout.tsx */
+
+:root {
+  /* ===== BASE COLORS ===== */
+  
+  /* Red */
+  --color-red-80: #c62d2a;
+  --color-red-70: #f84141;
+  --color-red-20: #ffbbc7;
+  --color-red-10: #ffe4e9;
+  --color-red-5: #ffecf0;
+  
+  /* Orange */
+  --color-orange-50: #fd6c37;
+  --color-orange-40: #ff8a56;
+  --color-orange-20: #ffc794;
+  --color-orange-10: #ffe3c9;
+  --color-orange-5: #ffebd9;
+  
+  /* Yellow */
+  --color-yellow-100: #f8cc30;
+  --color-yellow-90: #fdd832;
+  --color-yellow-80: #fee049;
+  --color-yellow-70: #fde721;
+  --color-yellow-50: #feed5a; /* Brand */
+  --color-yellow-20: #fff0bb;
+  --color-yellow-10: #fdfaee;
+  --color-yellow-5: #fefcf3;
+  
+  /* Teal */
+  --color-teal-80: #19809a;
+  --color-teal-40: #59cae7;
+  --color-teal-30: #a9e8f8;
+  --color-teal-10: #d3f5ff;
+  --color-teal-5: #e0f8ff;
+  
+  /* Blue */
+  --color-blue-90: #2755b6;
+  --color-blue-80: #2c64d8;
+  --color-blue-60: #4e93f3;
+  --color-blue-10: #dce9fd;
+  --color-blue-5: #e7f0fe;
+  
+  /* Green */
+  --color-green-90: #15663a;
+  --color-green-70: #039854;
+  --color-green-50: #5fc69b;
+  --color-green-10: #cbeddd;
+  --color-green-5: #dbf2e7;
+  
+  /* Charcoal */
+  --color-charcoal-90: #333333;
+  --color-charcoal-70: rgba(51, 51, 51, 0.68);
+  --color-charcoal-40: rgba(51, 51, 51, 0.40);
+  
+  /* Greige */
+  --color-greige-40: rgba(47, 40, 28, 0.20);
+  --color-greige-30: rgba(58, 47, 31, 0.10);
+  --color-greige-20: rgba(58, 47, 31, 0.05);
+  --color-greige-10: #f9f8f7;
+  --color-greige-5: #fbfaf9;
+  
+  /* White */
+  --color-white: #ffffff;
+  --color-white-20: rgba(255, 255, 255, 0.20);
+  --color-white-15: rgba(255, 255, 255, 0.15);
+  --color-white-10: rgba(255, 255, 255, 0.10);
+
+  /* ===== SEMANTIC COLOR TOKENS ===== */
+  
+  /* Core */
+  --core-yellow: var(--color-yellow-50);
+  --core-charcoal: var(--color-charcoal-90);
+  --core-white: var(--color-white);
+  
+  /* Text */
+  --text-default: var(--color-charcoal-90);
+  --text-link: var(--color-charcoal-90);
+  --text-whisper: var(--color-charcoal-70);
+  --text-placeholder: var(--color-charcoal-70);
+  --text-disabled: var(--color-greige-40);
+  --text-white: var(--color-white);
+  --text-success: var(--color-green-90);
+  --text-error: var(--color-red-80);
+  --text-dark-mode-disabled: var(--color-white-20);
+  
+  /* Icon */
+  --icon-default: var(--color-charcoal-90);
+  --icon-whisper: var(--color-charcoal-70);
+  --icon-white: var(--color-white);
+  --icon-success: var(--color-green-70);
+  --icon-error: var(--color-red-80);
+  --icon-callout: var(--color-blue-60);
+  --icon-new: var(--color-yellow-100);
+  --icon-disabled: var(--color-greige-40);
+  
+  /* Background */
+  --background-default-white: var(--color-white);
+  --background-default-greige: var(--color-greige-10);
+  --background-backdrop: var(--color-charcoal-40);
+  --background-success: var(--color-green-10);
+  --background-error: var(--color-red-10);
+  --background-callout: var(--color-blue-10);
+  --background-new: var(--color-yellow-20);
+  --background-disabled: var(--color-greige-30);
+  --background-info: var(--color-greige-20);
+  
+  /* Background Brand */
+  --background-brand-yellow-light: var(--color-yellow-10);
+  --background-brand-yellow-dark: var(--color-yellow-20);
+  --background-brand-orange-light: var(--color-orange-10);
+  --background-brand-orange-dark: var(--color-orange-40);
+  --background-brand-teal-light: var(--color-teal-10);
+  --background-brand-teal-dark: var(--color-teal-80);
+  --background-brand-green-light: var(--color-green-10);
+  --background-brand-green-dark: var(--color-green-90);
+  --background-brand-blue-light: var(--color-blue-10);
+  --background-brand-blue-dark: var(--color-blue-80);
+  --background-brand-charcoal: var(--color-charcoal-90);
+  
+  /* Stroke */
+  --stroke-charcoal: var(--color-charcoal-90);
+  --stroke-ui: var(--color-greige-40);
+  --stroke-default: var(--color-greige-30);
+  --stroke-keyboard: var(--color-blue-60);
+  --stroke-disabled: var(--color-greige-40);
+  --stroke-error: var(--color-red-70);
+  --stroke-dark-mode-disabled: var(--color-white-20);
+  
+  /* State */
+  --state-hover: var(--color-greige-20);
+  --state-pressed: var(--color-greige-30);
+  --state-selected-light: var(--color-greige-20);
+  --state-selected-dark: var(--color-charcoal-90);
+  --state-brand-hover: var(--color-yellow-80);
+  --state-brand-pressed: var(--color-yellow-90);
+  --state-dark-mode-hover: var(--color-white-10);
+  --state-dark-mode-pressed: var(--color-white-15);
+
+  /* ===== TYPOGRAPHY ===== */
+  
+  /* Font Family - Sharp Sans loaded via next/font/local in layout.tsx */
+  /* Use --font-sharp-sans CSS variable set by Next.js */
+  --font-family-fallback: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  
+  /* Font Weights */
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  /* Font Sizes */
+  --font-size-display: 28px;
+  --font-size-title-1: 28px;
+  --font-size-title-2: 20px;
+  --font-size-title-3: 18px;
+  --font-size-title-4: 16px;
+  --font-size-body: 16px;
+  --font-size-subbody: 14px;
+  --font-size-caption: 12px;
+  
+  /* Line Heights */
+  --line-height-display: 36px;
+  --line-height-title-1: 32px;
+  --line-height-title-2: 26px;
+  --line-height-title-3: 24px;
+  --line-height-title-4: 20px;
+  --line-height-body: 26px;
+  --line-height-subbody: 20px;
+  --line-height-caption: 16px;
+  
+  /* Letter Spacing */
+  --letter-spacing-default: 0;
+  --letter-spacing-caption: 0.12px;
+
+  /* ===== COMPONENT TOKENS ===== */
+  
+  /* Border Radius */
+  --radius-button: 4px;
+  --radius-input: 4px;
+  --radius-card: 8px;
+  --radius-dialog: 12px;
+  
+  /* Button Sizes */
+  --button-height-default: 48px;
+  --button-height-small: 32px;
+  --button-padding-x: 20px;
+  --button-gap: 8px;
+
+  /* ===== BREAKPOINTS ===== */
+  /* Radix UI Themes breakpoints - min-width based */
+  /* https://www.radix-ui.com/themes/docs/theme/breakpoints */
+  --breakpoint-xs: 520px;   /* Phones (landscape) */
+  --breakpoint-sm: 768px;   /* Tablets (portrait) */
+  --breakpoint-md: 1024px;  /* Tablets (landscape) */
+  --breakpoint-lg: 1280px;  /* Laptops */
+  --breakpoint-xl: 1640px;  /* Desktops */
+}
+

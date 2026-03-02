@@ -1,0 +1,21 @@
+@import "tailwindcss";
+@import "../styles/tokens.css";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background-default-white);
+  --color-foreground: var(--text-default);
+  --font-sans: var(--font-sharp-sans);
+  --font-mono: ui-monospace, monospace;
+  --breakpoint-xs: 520px;
+  --breakpoint-sm: 768px;
+  --breakpoint-md: 1024px;
+  --breakpoint-lg: 1280px;
+  --breakpoint-xl: 1640px;
+}
+
+body {
+  font-family: var(--font-sharp-sans), var(--font-family-fallback);
+}
