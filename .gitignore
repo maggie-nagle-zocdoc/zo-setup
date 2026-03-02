@@ -1,6 +1,8 @@
 node_modules
+.next
+out
 mcp/dist
 .mcp.json
 .cursor
 dist
-.next
+*.tsbuildinfo

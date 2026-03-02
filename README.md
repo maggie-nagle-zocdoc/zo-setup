@@ -4,56 +4,52 @@ Guided setup flow for **Zo** — Zocdoc's AI phonebot. Providers use this flow t
 
 ## Structure
 
-- **Entry:** Zocdoc homepage wireframe ([`vibezz/src/app/page.tsx`](vibezz/src/app/page.tsx)) — providers see the homepage and a "Set up Zo" CTA.
+- **Entry:** Zocdoc homepage wireframe ([`src/app/page.tsx`](src/app/page.tsx)) — providers see the homepage and Zo task in To do.
 - **Intro:** Welcome and overview at `/projects/zo-setup/intro`.
-- **Sections:** Three sections, each with multiple pages/tasks:
-  - **Section 1** — welcome + 2 tasks
-  - **Section 2** — welcome + 2 tasks
-  - **Section 3** — welcome + 2 tasks
+- **Sections:** Three sections (Phone lines, Scheduling preferences, Voice configuration), each with multiple tasks.
 
-All flow UI uses the **Vibezz** component library (design system in `vibezz/`) for styles and components.
+All flow UI uses the **Vibezz** component library (design system in `src/components/vibezz/`) for styles and components.
 
 ## Running the app
 
-From the **vibezz** directory:
+From the repo root:
 
 ```bash
-cd vibezz
 npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). You’ll see the Zocdoc homepage wireframe; click **Set up Zo** to start the guided flow.
+Open [http://localhost:3080](http://localhost:3080). You’ll see the homepage; click **Set up Zo** to start the guided flow.
 
 ## Project layout
 
 ```
 zo-setup/
-├── README.md                 # This file
-├── vibezz/                   # Vibezz app + Zo setup flow
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── page.tsx                    # Zocdoc homepage wireframe (entry)
-│   │   │   └── projects/
-│   │   │       ├── registry.ts             # Registers Zo setup + other projects
-│   │   │       ├── zo-setup/
-│   │   │       │   ├── manifest.ts         # Sections + pages for Zo setup
-│   │   │       │   └── pages/
-│   │   │       │       ├── intro.tsx       # Intro page
-│   │   │       │       ├── section-1-welcome.tsx
-│   │   │       │       ├── section-1-task-2.tsx
-│   │   │       │       ├── section-1-task-3.tsx
-│   │   │       │       ├── section-2-*.tsx
-│   │   │       │       └── section-3-*.tsx
-│   │   │       └── ...
-│   │   ├── components/vibezz/  # Design system components
-│   │   └── styles/            # Tokens, etc.
-│   └── package.json
+├── README.md
+├── package.json
+├── src/
+│   ├── app/
+│   │   ├── page.tsx              # Homepage wireframe
+│   │   ├── layout.tsx
+│   │   └── projects/
+│   │       ├── zo-setup/         # Zo setup flow + shell
+│   │       │   ├── manifest.ts
+│   │       │   ├── zo-setup-shell.tsx
+│   │       │   └── pages/
+│   │       ├── registry.ts
+│   │       └── ...
+│   ├── components/vibezz/        # Design system
+│   └── styles/                   # Tokens, etc.
+├── public/
 └── ...
 ```
 
 ## Editing the flow
 
-- **Add/rename sections or pages:** Edit [`vibezz/src/app/projects/zo-setup/manifest.ts`](vibezz/src/app/projects/zo-setup/manifest.ts) and add or update the corresponding page under `vibezz/src/app/projects/zo-setup/pages/`.
-- **Change the wireframe or entry:** Edit [`vibezz/src/app/page.tsx`](vibezz/src/app/page.tsx).
-- **Use Vibezz components:** Import from `@/components/vibezz` and follow the [Vibezz README](vibezz/README.md) and design tokens.
+- **Add/rename sections or pages:** Edit [`src/app/projects/zo-setup/manifest.ts`](src/app/projects/zo-setup/manifest.ts) and add or update the corresponding page under `src/app/projects/zo-setup/pages/`.
+- **Change the homepage or Zo task:** Edit [`src/app/page.tsx`](src/app/page.tsx).
+- **Use Vibezz components:** Import from `@/components/vibezz` and use design tokens from `src/styles/`.
+
+## GitHub Pages
+
+The app deploys to GitHub Pages via the workflow in `.github/workflows/deploy-pages.yml`. Build runs from root with `GITHUB_PAGES=true` (static export). Ensure **Settings → Pages → Source** is set to **GitHub Actions**.

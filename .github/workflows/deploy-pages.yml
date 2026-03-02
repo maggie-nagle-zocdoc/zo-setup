@@ -25,13 +25,13 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
-          cache-dependency-path: vibezz/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: cd vibezz && npm ci
+        run: npm ci
 
       - name: Build for GitHub Pages
-        run: cd vibezz && GITHUB_PAGES=true npm run build
+        run: GITHUB_PAGES=true npm run build
         env:
           GITHUB_PAGES: "true"
 
@@ -41,7 +41,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: vibezz/out
+          path: out
 
   deploy:
     environment:

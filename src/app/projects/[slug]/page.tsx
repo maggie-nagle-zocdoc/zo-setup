@@ -4,6 +4,10 @@ import { Nav, Logo, Container, Section, Header, Link, Badge } from "@/components
 import { projects } from "../registry";
 import { PagesTable } from "./pages-table";
 
+export function generateStaticParams() {
+  return projects.map((project) => ({ slug: project.slug }));
+}
+
 interface Props {
   params: Promise<{ slug: string }>;
 }

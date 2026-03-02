@@ -6,6 +6,12 @@ import { IconButton } from "@/components/vibezz";
 import { ZoSetupShell } from "../../zo-setup/zo-setup-shell";
 import { projects } from "../../registry";
 
+export function generateStaticParams() {
+  return projects.flatMap((project) =>
+    project.pages.map((page) => ({ slug: project.slug, page: page.slug }))
+  );
+}
+
 interface Props {
   params: Promise<{ slug: string; page: string }>;
 }
