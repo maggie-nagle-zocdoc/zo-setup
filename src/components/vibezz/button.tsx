@@ -51,6 +51,7 @@ const buttonVariants = cva(
           "focus-visible:ring-[var(--stroke-keyboard)]",
         ],
         secondary: [
+          "w-fit",
           "bg-[var(--color-white)] text-[var(--text-default)]",
           "border border-[var(--stroke-charcoal)]",
           "hover:bg-[var(--state-hover)]",

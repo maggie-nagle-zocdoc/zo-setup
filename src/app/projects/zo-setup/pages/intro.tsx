@@ -8,8 +8,8 @@ const SECTIONS = [
 
 export default function ZoSetupIntro() {
   return (
-    <div className="flex-1 flex flex-col min-h-0 w-full">
-      <div className="grid flex-1 min-h-0 w-full grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-[72px]">
+    <div className="flex flex-1 min-h-0 w-full flex-col justify-center">
+      <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-[72px]">
         {/* Left: image placeholder — fills column */}
         <div className="flex min-h-0 w-full items-center">
           <div

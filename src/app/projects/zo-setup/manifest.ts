@@ -29,9 +29,9 @@ export const manifest: ProjectManifest = {
   ],
   pages: [
     { slug: "intro", name: "Welcome to Zo", description: "Introduction and overview", section: "intro" },
-    { slug: "section-1-task-1", name: "Task 1", description: "Phone lines", section: "section-1" },
-    { slug: "section-1-task-2", name: "Task 2", description: "Phone lines", section: "section-1" },
-    { slug: "section-1-task-3", name: "Task 3", description: "Phone lines", section: "section-1" },
+    { slug: "section-1-task-1", name: "Practice information", description: "Listen to how Zo pronounces your practice's name", section: "section-1" },
+    { slug: "section-1-task-2", name: "Phone lines", description: "Set up your practice phone system", section: "section-1" },
+    { slug: "section-1-task-3", name: "Transfer numbers", description: "Set where Zo transfers calls when needed. Each phone line is required to have a catch all transfer phone number.", section: "section-1" },
     { slug: "section-2-task-1", name: "Task 1", description: "Scheduling preferences", section: "section-2" },
     { slug: "section-2-task-2", name: "Task 2", description: "Scheduling preferences", section: "section-2" },
     { slug: "section-2-task-3", name: "Task 3", description: "Scheduling preferences", section: "section-2" },

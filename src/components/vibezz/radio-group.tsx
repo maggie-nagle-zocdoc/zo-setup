@@ -5,6 +5,7 @@ import * as RadioGroupPrimitive from "@radix-ui/react-radio-group"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "../../lib/utils"
 import { FieldError, FieldDescription, FieldWrapper, labelVariants } from "./field-primitives"
+import { Icon } from "./icon"
 
 /* =============================================================================
  * RADIO GROUP
@@ -238,6 +239,8 @@ interface RadioCardProps
   label: string
   /** Optional description text */
   description?: string
+  /** Optional icon name (Material Symbols) - rendered left-aligned at 40px, outlined style */
+  icon?: string
   /** HTML id attribute */
   id?: string
 }
@@ -245,12 +248,46 @@ interface RadioCardProps
 const RadioCard = React.forwardRef<
   React.ElementRef<typeof RadioGroupPrimitive.Item>,
   RadioCardProps
->(({ label, description, id, className, layout = "wide", hasError: propHasError, disabled: propDisabled, ...props }, ref) => {
+>(({ label, description, icon: iconName, id, className, layout = "wide", hasError: propHasError, disabled: propDisabled, ...props }, ref) => {
   const generatedId = React.useId()
   const radioId = id || generatedId
   const context = useRadioGroupContext()
   const hasError = propHasError ?? context.hasError
   const disabled = propDisabled ?? context.disabled
+
+  const textContent = layout === "compact" ? (
+    <div className="flex flex-col h-full justify-end text-left">
+      <span
+        className={cn(
+          "block text-[var(--font-size-body)] leading-[var(--line-height-body)]",
+          disabled ? "font-normal text-[var(--text-disabled)]" : "font-semibold text-[var(--text-default)]"
+        )}
+      >
+        {label}
+      </span>
+      {description && (
+        <FieldDescription disabled={disabled} className="block mt-1">
+          {description}
+        </FieldDescription>
+      )}
+    </div>
+  ) : (
+    <div className="flex flex-col gap-0.5 min-w-0 w-full text-left">
+      <span
+        className={cn(
+          "text-[var(--font-size-body)] leading-[var(--line-height-body)]",
+          disabled ? "font-normal text-[var(--text-disabled)]" : "font-semibold text-[var(--text-default)]"
+        )}
+      >
+        {label}
+      </span>
+      {description && (
+        <FieldDescription disabled={disabled}>
+          {description}
+        </FieldDescription>
+      )}
+    </div>
+  )
 
   return (
     <RadioGroupPrimitive.Item
@@ -261,39 +298,13 @@ const RadioCard = React.forwardRef<
       {...props}
     >
       <RadioGroupPrimitive.Indicator className="sr-only" />
-      
-      {layout === "compact" ? (
-        <div className="flex flex-col h-full justify-end text-left">
-          <span
-            className={cn(
-              "block text-[var(--font-size-body)] leading-[var(--line-height-body)]",
-              disabled ? "font-normal text-[var(--text-disabled)]" : "font-semibold text-[var(--text-default)]"
-            )}
-          >
-            {label}
-          </span>
-          {description && (
-            <FieldDescription disabled={disabled} className="block mt-1">
-              {description}
-            </FieldDescription>
-          )}
+      {iconName && layout === "wide" ? (
+        <div className="flex items-center gap-4 w-full">
+          <Icon name={iconName} size="40" filled={false} className="shrink-0 text-[var(--icon-default)]" />
+          {textContent}
         </div>
       ) : (
-        <div className="flex flex-col gap-0.5 min-w-0 w-full text-left">
-          <span
-            className={cn(
-              "text-[var(--font-size-body)] leading-[var(--line-height-body)]",
-              disabled ? "font-normal text-[var(--text-disabled)]" : "font-semibold text-[var(--text-default)]"
-            )}
-          >
-            {label}
-          </span>
-          {description && (
-            <FieldDescription disabled={disabled}>
-              {description}
-            </FieldDescription>
-          )}
-        </div>
+        textContent
       )}
     </RadioGroupPrimitive.Item>
   )

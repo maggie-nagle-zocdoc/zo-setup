@@ -38,11 +38,11 @@ const Header = React.forwardRef<HTMLElement, HeaderProps>(
       >
         {/* Left zone - Title and subbody */}
         <div className="flex flex-col gap-1">
-          <h1 className="text-[24px] leading-[32px] font-semibold md:text-[32px] md:leading-[44px] text-[var(--text-default)]">
+          <h1 className="text-[20px] leading-[26px] font-semibold text-[var(--text-default)] md:text-[24px] md:leading-[32px]">
             {title}
           </h1>
           {subbody && (
-            <p className="text-[14px] leading-[20px] text-[var(--text-secondary)]">
+            <p className="text-[16px] leading-[26px] font-medium text-[var(--text-secondary)]">
               {subbody}
             </p>
           )}
