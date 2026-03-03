@@ -205,11 +205,10 @@ export function ZoSetupShell({
           >
             Reset
           </button>
-          <NextLink
-            href="/"
-            className="text-[14px] leading-[20px] font-semibold text-[var(--text-link)] hover:text-[var(--color-charcoal-70)] transition-colors"
-          >
-            Save and exit
+          <NextLink href="/">
+            <Button variant="ghost" size="small">
+              Save and exit
+            </Button>
           </NextLink>
         </div>
       </header>
