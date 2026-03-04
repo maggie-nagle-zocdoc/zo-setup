@@ -73,11 +73,13 @@ export interface IconButtonProps
   icon: string
   /** Accessible label for the button */
   "aria-label": string
+  /** Optional class name applied to the inner icon span */
+  iconClassName?: string
   asChild?: boolean
 }
 
 const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ className, icon, size, mode, asChild = false, ...props }, ref) => {
+  ({ className, icon, size, mode, iconClassName, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
     const iconSize = iconSizeMap[size ?? "default"]
 
@@ -87,7 +89,7 @@ const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
         ref={ref}
         {...props}
       >
-        <Icon name={icon} size={iconSize} />
+        <Icon name={icon} size={iconSize} className={iconClassName} />
       </Comp>
     )
   }

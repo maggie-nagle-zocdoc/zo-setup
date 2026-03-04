@@ -14,9 +14,18 @@ import {
   SelectValue,
   SelectContent,
   SelectItem,
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerBody,
+  DrawerFooter,
+  DrawerTitle,
+  DrawerDescription,
 } from "@/components/vibezz";
-import { ZoSetupStateContext } from "../zo-setup-shell";
+import { ZoSetupBackContext, ZoSetupStateContext } from "../zo-setup-shell";
 import type { ZoPhoneLine } from "../zo-setup-shell";
+import { cn } from "@/lib/utils";
+import { formatPhoneInput, formatPhoneDisplay, getPhoneDigits } from "@/lib/phone";
 
 const TRANSFER_TYPES = [
   "Appointment",
@@ -35,14 +44,16 @@ const TRANSFER_TYPES = [
 
 type TransferType = (typeof TRANSFER_TYPES)[number];
 
+/** Additional transfer: one number for a type, applied to selected phone lines */
 interface AdditionalTransfer {
   id: string;
   type: TransferType;
   number: string;
+  lineIds: string[];
 }
 
-interface LineTransferState {
-  catchAll: string;
+interface StoredTransferState {
+  byLine: Record<string, { catchAll: string }>;
   additional: AdditionalTransfer[];
 }
 
@@ -52,23 +63,44 @@ const DEFAULT_LINE: ZoPhoneLine = {
   locationIds: [],
 };
 
-function getDefaultTransferState(): LineTransferState {
-  return { catchAll: "", additional: [] };
-}
-
 export const TRANSFER_NUMBERS_STORAGE_KEY = "zo-setup-transfer-numbers";
 
-function getStoredTransferState(): Record<string, LineTransferState> | null {
+function getStoredTransferState(): StoredTransferState | null {
   if (typeof window === "undefined") return null;
   try {
     const s = sessionStorage.getItem(TRANSFER_NUMBERS_STORAGE_KEY);
-    return s ? (JSON.parse(s) as Record<string, LineTransferState>) : null;
+    if (!s) return null;
+    const parsed = JSON.parse(s);
+    if (!parsed) return null;
+    // New format: { byLine, additional }
+    if (parsed.byLine && typeof parsed.byLine === "object") {
+      return {
+        byLine: parsed.byLine,
+        additional: Array.isArray(parsed.additional) ? parsed.additional : [],
+      };
+    }
+    // Old format: Record<string, { catchAll, additional? }> — migrate to new
+    const byLine: Record<string, { catchAll: string }> = {};
+    const additional: AdditionalTransfer[] = [];
+    for (const [lineId, row] of Object.entries(parsed as Record<string, { catchAll?: string; additional?: { id: string; type: string; number: string }[] }>)) {
+      byLine[lineId] = { catchAll: row?.catchAll ?? "" };
+      const adds = row?.additional ?? [];
+      for (const a of adds) {
+        additional.push({
+          id: a.id ?? crypto.randomUUID(),
+          type: a.type as TransferType,
+          number: a.number ?? "",
+          lineIds: [lineId],
+        });
+      }
+    }
+    return { byLine, additional };
   } catch {
     return null;
   }
 }
 
-function storeTransferState(data: Record<string, LineTransferState>) {
+function storeTransferState(data: StoredTransferState) {
   try {
     sessionStorage.setItem(TRANSFER_NUMBERS_STORAGE_KEY, JSON.stringify(data));
   } catch {
@@ -76,32 +108,42 @@ function storeTransferState(data: Record<string, LineTransferState>) {
   }
 }
 
+type Phase = "catch-all" | "additional";
+
 export default function TransferNumbersTask() {
   const { phoneLines } = useContext(ZoSetupStateContext);
+  const { setInTaskBackHandler } = useContext(ZoSetupBackContext);
   const lines = phoneLines.length > 0 ? phoneLines : [DEFAULT_LINE];
 
   const hasRestoredRef = useRef(false);
+  const [phase, setPhase] = useState<Phase>("catch-all");
 
-  const [transferByLineId, setTransferByLineId] = useState<Record<string, LineTransferState>>(() => {
-    const initial: Record<string, LineTransferState> = {};
+  const [catchAllByLineId, setCatchAllByLineId] = useState<Record<string, string>>(() => {
     const stored = getStoredTransferState();
+    const out: Record<string, string> = {};
     lines.forEach((line) => {
-      initial[line.id] = stored?.[line.id] ?? getDefaultTransferState();
+      out[line.id] = stored?.byLine?.[line.id]?.catchAll ?? "";
     });
-    return initial;
+    return out;
+  });
+
+  const [additionalTransfers, setAdditionalTransfers] = useState<AdditionalTransfer[]>(() => {
+    const stored = getStoredTransferState();
+    return stored?.additional ?? [];
   });
 
   const lineIdsKey = lines.map((l) => l.id).join(",");
   useEffect(() => {
     const stored = getStoredTransferState();
     if (stored) {
-      setTransferByLineId((prev) => {
+      setCatchAllByLineId((prev) => {
         const next = { ...prev };
         lines.forEach((line) => {
-          if (stored[line.id]) next[line.id] = stored[line.id];
+          if (stored.byLine[line.id]) next[line.id] = stored.byLine[line.id].catchAll;
         });
         return next;
       });
+      setAdditionalTransfers(stored.additional);
     }
   }, [lineIdsKey]);
 
@@ -113,12 +155,12 @@ export default function TransferNumbersTask() {
   }, []);
 
   useEffect(() => {
-    setTransferByLineId((prev) => {
+    setCatchAllByLineId((prev) => {
       const next = { ...prev };
       let changed = false;
       lines.forEach((line) => {
         if (!(line.id in next)) {
-          next[line.id] = getDefaultTransferState();
+          next[line.id] = "";
           changed = true;
         }
       });
@@ -128,172 +170,302 @@ export default function TransferNumbersTask() {
 
   useEffect(() => {
     if (!hasRestoredRef.current) return;
-    storeTransferState(transferByLineId);
-  }, [transferByLineId]);
-
-  const setCatchAll = useCallback((lineId: string, value: string) => {
-    setTransferByLineId((prev) => ({
-      ...prev,
-      [lineId]: { ...prev[lineId], catchAll: value },
-    }));
-  }, []);
-
-  const addAdditional = useCallback((lineId: string) => {
-    setTransferByLineId((prev) => {
-      const line = prev[lineId] ?? getDefaultTransferState();
-      const usedTypes = new Set(line.additional.map((a) => a.type));
-      const firstUnused = TRANSFER_TYPES.find((t) => !usedTypes.has(t)) ?? TRANSFER_TYPES[0];
-      return {
-        ...prev,
-        [lineId]: {
-          ...line,
-          additional: [
-            ...line.additional,
-            { id: crypto.randomUUID(), type: firstUnused, number: "" },
-          ],
-        },
-      };
+    storeTransferState({
+      byLine: Object.fromEntries(lines.map((l) => [l.id, { catchAll: catchAllByLineId[l.id] ?? "" }])),
+      additional: additionalTransfers,
     });
+  }, [catchAllByLineId, additionalTransfers, lines]);
+
+  const setCatchAll = useCallback((lineId: string, rawValue: string) => {
+    setCatchAllByLineId((prev) => ({ ...prev, [lineId]: formatPhoneInput(rawValue) }));
   }, []);
 
-  const updateAdditional = useCallback(
-    (lineId: string, transferId: string, field: "type" | "number", value: string) => {
-      setTransferByLineId((prev) => {
-        const line = prev[lineId];
-        if (!line) return prev;
-        return {
-          ...prev,
-          [lineId]: {
-            ...line,
-            additional: line.additional.map((a) =>
-              a.id === transferId ? { ...a, [field]: value } : a
-            ),
-          },
-        };
-      });
-    },
-    []
+  const goToAdditional = useCallback(() => {
+    setPhase("additional");
+  }, []);
+
+  const goBackToCatchAll = useCallback(() => {
+    setPhase("catch-all");
+  }, []);
+
+  useEffect(() => {
+    if (phase === "additional") {
+      setInTaskBackHandler(goBackToCatchAll);
+      return () => setInTaskBackHandler(null);
+    }
+    setInTaskBackHandler(null);
+  }, [phase, goBackToCatchAll, setInTaskBackHandler]);
+
+  const allCatchAllFilled = lines.every(
+    (line) => getPhoneDigits(catchAllByLineId[line.id] ?? "").length >= 10
   );
 
-  const removeAdditional = useCallback((lineId: string, transferId: string) => {
-    setTransferByLineId((prev) => {
-      const line = prev[lineId];
-      if (!line) return prev;
-      return {
-        ...prev,
-        [lineId]: {
-          ...line,
-          additional: line.additional.filter((a) => a.id !== transferId),
-        },
-      };
+  // Add additional transfer: drawer state
+  const [addDrawerType, setAddDrawerType] = useState<TransferType | null>(null);
+  const [addDrawerNumber, setAddDrawerNumber] = useState("");
+  const [addDrawerApplyToAll, setAddDrawerApplyToAll] = useState(true);
+  const [addDrawerSelectedLineIds, setAddDrawerSelectedLineIds] = useState<Set<string>>(new Set());
+
+  const openAddDrawer = useCallback((type: TransferType) => {
+    setAddDrawerType(type);
+    setAddDrawerNumber("");
+    setAddDrawerApplyToAll(true);
+    setAddDrawerSelectedLineIds(new Set(lines.map((l) => l.id)));
+  }, [lines]);
+
+  const closeAddDrawer = useCallback(() => {
+    setAddDrawerType(null);
+    setAddDrawerNumber("");
+  }, []);
+
+  const toggleAddDrawerLine = useCallback((lineId: string) => {
+    setAddDrawerSelectedLineIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(lineId)) next.delete(lineId);
+      else next.add(lineId);
+      return next;
     });
   }, []);
+
+  const saveAddDrawer = useCallback(() => {
+    if (!addDrawerType || !addDrawerNumber.trim()) return;
+    const lineIds = addDrawerApplyToAll ? lines.map((l) => l.id) : Array.from(addDrawerSelectedLineIds);
+    if (lineIds.length === 0) return;
+    setAdditionalTransfers((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        type: addDrawerType,
+        number: addDrawerNumber.trim(),
+        lineIds,
+      },
+    ]);
+    closeAddDrawer();
+  }, [addDrawerType, addDrawerNumber, addDrawerApplyToAll, addDrawerSelectedLineIds, lines, closeAddDrawer]);
+
+  const removeAdditional = useCallback((id: string) => {
+    setAdditionalTransfers((prev) => prev.filter((a) => a.id !== id));
+  }, []);
+
+  const transfersByType = TRANSFER_TYPES.map((type) => ({
+    type,
+    entries: additionalTransfers.filter((a) => a.type === type),
+  }));
+
+  const getLineName = (lineId: string) => lines.find((l) => l.id === lineId)?.name ?? "Phone line";
 
   return (
     <div className="flex-1 flex flex-col">
       <Container>
         <Section size="2">
-          <Header
-            title="Transfer numbers"
-            subbody="Set where Zo transfers calls when needed. Each phone line is required to have a catch all transfer phone number."
-          />
+          {phase === "catch-all" && (
+            <Header
+              title="Transfer numbers"
+              subbody="Each phone line must have a catch-all number. You can add transfer numbers by type in the next step."
+            />
+          )}
+          {phase === "additional" && (
+            <Header
+              title="Additional transfer numbers"
+              subbody="Add numbers by type to route specific requests (e.g. billing, prescriptions). Apply a number to all phone lines or select which lines."
+            />
+          )}
+
           <div className="mt-8 flex flex-col gap-8 max-w-xl">
-            {lines.map((line) => {
-              const state = transferByLineId[line.id] ?? getDefaultTransferState();
-              const usedTypes = new Set(state.additional.map((a) => a.type));
-              const availableTypes = TRANSFER_TYPES.filter((t) => !usedTypes.has(t));
-
-              return (
-                <div
-                  key={line.id}
-                  className="rounded-xl border border-[var(--stroke-default)] bg-[var(--background-default-white)] p-6 flex flex-col gap-6"
+            {phase === "catch-all" && (
+              <>
+                <div className="rounded-xl border border-[var(--stroke-default)] bg-[var(--background-default-white)] overflow-hidden">
+                  <table className="w-full border-collapse" role="table">
+                    <thead>
+                      <tr className="border-b border-[var(--stroke-default)] bg-[var(--background-default-greige)]">
+                        <th className="text-left text-[14px] leading-[20px] font-semibold text-[var(--text-default)] px-4 py-3">
+                          Phone line
+                        </th>
+                        <th className="text-left text-[14px] leading-[20px] font-semibold text-[var(--text-default)] px-4 py-3">
+                          Catch-all number
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {lines.map((line) => (
+                        <tr
+                          key={line.id}
+                          className="border-b border-[var(--stroke-default)] last:border-b-0"
+                        >
+                          <td className="px-4 py-3 text-[14px] leading-[20px] text-[var(--text-default)]">
+                            {line.name || "Phone line"}
+                          </td>
+                          <td className="px-4 py-3">
+                            <input
+                              type="tel"
+                              placeholder="e.g. (555) 123-4567"
+                              value={catchAllByLineId[line.id] ?? ""}
+                              onChange={(e) => setCatchAll(line.id, e.target.value)}
+                              inputMode="numeric"
+                              autoComplete="tel"
+                              className="w-full min-w-[200px] h-9 px-3 rounded border border-[var(--stroke-ui)] bg-[var(--background-default-white)] text-[14px] leading-[20px] text-[var(--text-default)] placeholder:text-[var(--text-whisper)] focus:outline-none focus:border-[var(--stroke-charcoal)]"
+                              aria-label={`Catch-all for ${line.name || "phone line"}`}
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <p className="px-4 py-2 text-[14px] leading-[20px] text-[var(--text-whisper)] border-t border-[var(--stroke-default)]">
+                    Phone number must be different than the number patients call.
+                  </p>
+                </div>
+                <Button
+                  variant="primary"
+                  size="default"
+                  onClick={goToAdditional}
+                  disabled={!allCatchAllFilled}
+                  className="w-fit"
                 >
-                  <h2 className="text-[18px] leading-[24px] font-semibold text-[var(--text-default)]">
-                    {line.name || "Phone line"}
-                  </h2>
+                  Continue to additional transfer numbers
+                </Button>
+              </>
+            )}
 
-                  <TextField
-                    label="Catch all"
-                    placeholder="e.g. (555) 123-4567"
-                    helperText="Phone number must be different than the number patients call"
-                    value={state.catchAll}
-                    onChange={(e) => setCatchAll(line.id, e.target.value)}
-                    size="default"
-                    required
-                  />
-
-                  <div className="flex flex-col gap-0.5">
-                    <FieldLabel size="default" required={false}>
-                      Additional transfer numbers
-                    </FieldLabel>
-                    <p className="text-[14px] leading-[20px] font-medium text-[var(--text-whisper)]">
-                      Zo can route specific requests (e.g. billing, prescriptions) to the right place
-                    </p>
-
-                    <div className="mt-3 flex flex-col gap-4">
-                    {state.additional.length > 0 && (
-                      <ul className="flex flex-col gap-4">
-                        {state.additional.map((add) => (
+            {phase === "additional" && (
+              <div className="flex flex-col gap-8 animate-in fade-in duration-300">
+                {transfersByType.map(({ type, entries }) => (
+                  <div
+                    key={type}
+                    className="rounded-xl border border-[var(--stroke-default)] bg-[var(--background-default-white)] p-6 flex flex-col gap-4"
+                  >
+                    <h2 className="text-[16px] leading-[22px] font-semibold text-[var(--text-default)]">
+                      {type}
+                    </h2>
+                    {entries.length > 0 && (
+                      <ul className="flex flex-col gap-3">
+                        {entries.map((entry) => (
                           <li
-                            key={add.id}
-                            className="flex flex-wrap items-end gap-4 rounded-lg border border-[var(--stroke-default)] bg-[var(--background-default-greige)] p-4"
+                            key={entry.id}
+                            className="flex flex-wrap items-center gap-3 rounded-lg border border-[var(--stroke-default)] bg-[var(--background-default-greige)] px-4 py-3"
                           >
-                            <div className="flex-1 min-w-[200px]">
-                              <Select
-                                value={add.type}
-                                onValueChange={(v) =>
-                                  updateAdditional(line.id, add.id, "type", v as TransferType)
-                                }
-                              >
-                                <SelectTrigger size="small">
-                                  <SelectValue placeholder="Select type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {TRANSFER_TYPES.map((t) => (
-                                    <SelectItem key={t} value={t}>
-                                      {t}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="flex-1 min-w-[200px]">
-                              <TextField
-                                placeholder="Phone number"
-                                value={add.number}
-                                onChange={(e) =>
-                                  updateAdditional(line.id, add.id, "number", e.target.value)
-                                }
-                                size="small"
-                              />
-                            </div>
+                            <span className="text-[14px] leading-[20px] font-medium text-[var(--text-default)]">
+                              {formatPhoneDisplay(entry.number)}
+                            </span>
+                            <span className="text-[14px] leading-[20px] text-[var(--text-secondary)]">
+                              {entry.lineIds.length === lines.length
+                                ? "All phone lines"
+                                : entry.lineIds.map(getLineName).join(", ")}
+                            </span>
                             <IconButton
                               icon="close"
                               size="small"
-                              aria-label="Remove transfer number"
-                              onClick={() => removeAdditional(line.id, add.id)}
-                              className="shrink-0"
+                              aria-label={`Remove ${entry.number}`}
+                              onClick={() => removeAdditional(entry.id)}
+                              className="shrink-0 ml-auto"
                             />
                           </li>
                         ))}
                       </ul>
                     )}
-
                     <Button
                       variant="secondary"
                       size="small"
-                      onClick={() => addAdditional(line.id)}
-                      disabled={availableTypes.length === 0}
+                      onClick={() => openAddDrawer(type)}
                       className="w-fit"
                     >
-                      Add transfer number
+                      Add number
                     </Button>
-                    </div>
                   </div>
-                </div>
-              );
-            })}
+                ))}
+              </div>
+            )}
           </div>
+
+          <Drawer open={addDrawerType !== null} onOpenChange={(open) => !open && closeAddDrawer()}>
+            <DrawerContent showCloseButton>
+              <DrawerHeader>
+                <DrawerTitle>Add transfer number – {addDrawerType ?? ""}</DrawerTitle>
+                <DrawerDescription>
+                  Enter the phone number and choose to apply it to all phone lines or select specific lines.
+                </DrawerDescription>
+              </DrawerHeader>
+              <DrawerBody className="flex flex-col gap-6">
+                <div className="flex flex-col gap-2">
+                  <FieldLabel size="small">Phone number</FieldLabel>
+                  <TextField
+                    type="tel"
+                    placeholder="e.g. (555) 123-4567"
+                    value={addDrawerNumber}
+                    onChange={(e) => setAddDrawerNumber(formatPhoneInput(e.target.value))}
+                    size="small"
+                    inputMode="numeric"
+                    autoComplete="tel"
+                  />
+                </div>
+                <div className="flex flex-col gap-3">
+                  <FieldLabel size="small">Apply to</FieldLabel>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="applyTo"
+                      checked={addDrawerApplyToAll}
+                      onChange={() => {
+                        setAddDrawerApplyToAll(true);
+                        setAddDrawerSelectedLineIds(new Set(lines.map((l) => l.id)));
+                      }}
+                      className="rounded-full border-[var(--stroke-ui)]"
+                    />
+                    <span className="text-[14px] leading-[20px] text-[var(--text-default)]">
+                      All phone lines
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="applyTo"
+                      checked={!addDrawerApplyToAll}
+                      onChange={() => setAddDrawerApplyToAll(false)}
+                      className="rounded-full border-[var(--stroke-ui)]"
+                    />
+                    <span className="text-[14px] leading-[20px] text-[var(--text-default)]">
+                      Select phone lines
+                    </span>
+                  </label>
+                  {!addDrawerApplyToAll && (
+                    <div className="flex flex-col gap-2 pl-6 pt-1">
+                      {lines.map((line) => (
+                        <label
+                          key={line.id}
+                          className={cn(
+                            "flex items-center gap-2 cursor-pointer rounded-md px-2 py-1.5",
+                            addDrawerSelectedLineIds.has(line.id)
+                              ? "bg-[var(--state-hover)]"
+                              : ""
+                          )}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={addDrawerSelectedLineIds.has(line.id)}
+                            onChange={() => toggleAddDrawerLine(line.id)}
+                            className="rounded border-[var(--stroke-ui)]"
+                          />
+                          <span className="text-[14px] leading-[20px] text-[var(--text-default)]">
+                            {line.name || "Phone line"}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </DrawerBody>
+              <DrawerFooter>
+                <Button
+                  variant="primary"
+                  size="small"
+                  onClick={saveAddDrawer}
+                  disabled={getPhoneDigits(addDrawerNumber).length < 10 || (!addDrawerApplyToAll && addDrawerSelectedLineIds.size === 0)}
+                >
+                  Save
+                </Button>
+              </DrawerFooter>
+            </DrawerContent>
+          </Drawer>
         </Section>
       </Container>
     </div>

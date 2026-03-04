@@ -119,17 +119,22 @@ export default function PracticeInformation() {
 
           <div className="mt-8 flex flex-col gap-8 max-w-xl">
             {/* Practice name + play (preview container) */}
-            <div className="rounded-xl border border-[var(--stroke-default)] bg-[var(--background-default-white)] p-5 flex items-center gap-4">
+            <div className="flex flex-col gap-2">
+              <span className="text-[16px] leading-[26px] font-semibold text-[var(--text-default)]">
+                Preview pronunciation
+              </span>
+              <div className="rounded-xl border border-[var(--stroke-default)] bg-[var(--background-default-greige)] p-5 flex items-center gap-4">
               <IconButton
                 icon={isPlaying ? "stop" : "play_arrow"}
                 size="small"
                 aria-label={isPlaying ? "Stop" : "Listen to pronunciation"}
                 onClick={handlePlay}
-                className="shrink-0 !rounded-full bg-[var(--core-yellow)] text-[var(--text-default)] hover:bg-[var(--state-brand-hover)] active:bg-[var(--state-brand-pressed)] focus-visible:ring-[var(--stroke-keyboard)]"
+                className="shrink-0 !rounded-full bg-[var(--color-charcoal-90)] text-[var(--color-white)] hover:bg-[var(--color-charcoal-70)] active:bg-[var(--color-charcoal-70)] focus-visible:ring-[var(--stroke-keyboard)]"
               />
               <p className="text-[18px] leading-[28px] font-semibold text-[var(--text-default)]">
                 &ldquo;{EXAMPLE_PRACTICE_NAME}&rdquo;
               </p>
+            </div>
             </div>
 
             {/* Choice tiles: does it sound right? */}
@@ -140,7 +145,7 @@ export default function PracticeInformation() {
               className="flex flex-col gap-3 w-full"
             >
               <RadioCard value="sounds-good" label="Sounds good" />
-              <RadioCard value="add-phonetic" label="I'd like to add a phonetic spelling" />
+              <RadioCard value="add-phonetic" label="I need to update the pronunciation" />
             </RadioGroup>
 
             {/* Phonetic field when that option is chosen */}
@@ -170,14 +175,12 @@ export default function PracticeInformation() {
               {!showAdditional && (
                 <Button
                   variant="secondary"
-                  size="default"
+                  size="small"
                   onClick={() => {
                     setShowAdditional(true);
-                    if (additionalNames.length === 0) {
-                      addPracticeSlot();
-                    }
+                    addPracticeSlot();
                   }}
-                  className="mt-3"
+                  className="mt-3 w-fit"
                 >
                   Add practice name
                 </Button>
@@ -187,32 +190,30 @@ export default function PracticeInformation() {
                   {additionalNames.map((item, index) => (
                     <div
                       key={item.id}
-                      className="rounded-xl border border-[var(--stroke-default)] bg-[var(--background-default-white)] p-4 flex items-start gap-3 w-full"
+                      className="rounded-xl border border-[var(--stroke-default)] bg-[var(--background-default-white)] p-6 flex items-start gap-3 w-full"
                     >
                       <IconButton
                         icon={playingAdditionalIndex === index ? "stop" : "play_arrow"}
                         size="small"
                         aria-label={playingAdditionalIndex === index ? "Stop" : "Listen to pronunciation"}
                         onClick={() => handlePlayAdditional(index)}
-                        className="shrink-0 !rounded-full bg-[var(--core-yellow)] text-[var(--text-default)] hover:bg-[var(--state-brand-hover)] active:bg-[var(--state-brand-pressed)] focus-visible:ring-[var(--stroke-keyboard)]"
+                        className="shrink-0 !rounded-full bg-[var(--color-charcoal-90)] text-[var(--color-white)] hover:bg-[var(--color-charcoal-70)] active:bg-[var(--color-charcoal-70)] focus-visible:ring-[var(--stroke-keyboard)]"
                       />
                       <div className="flex-1 min-w-0 flex flex-col gap-3">
                         <TextField
-                          label={index === 0 ? "Practice name" : `Practice name ${index + 1}`}
+                          label="Practice name"
                           value={item.name}
                           onChange={(e) => updateAdditionalName(index, "name", e.target.value)}
-                          size="default"
+                          size="small"
                           required
                         />
                         {item.showPhonetic ? (
                           <div className="animate-in fade-in duration-200">
                             <TextField
-                              label="Pronunciation"
-                              placeholder="e.g. phonetic spelling"
+                              label="Phonetic spelling"
                               value={item.phonetic}
                               onChange={(e) => updateAdditionalName(index, "phonetic", e.target.value)}
-                              size="default"
-                              required
+                              size="small"
                             />
                           </div>
                         ) : (
@@ -227,16 +228,16 @@ export default function PracticeInformation() {
                         )}
                       </div>
                       <IconButton
-                        icon="close"
+                        icon="delete"
                         size="small"
                         aria-label="Remove practice name"
                         onClick={() => removeAdditionalName(index)}
-                        className="shrink-0"
+                        className="shrink-0 mt-8"
                       />
                     </div>
                   ))}
-                  <Button variant="tertiary" size="small" onClick={addPracticeSlot}>
-                    Add another
+                  <Button variant="secondary" size="small" onClick={addPracticeSlot} className="w-fit">
+                    Add practice name
                   </Button>
                 </div>
               )}

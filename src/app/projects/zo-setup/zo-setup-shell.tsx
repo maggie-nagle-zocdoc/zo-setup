@@ -21,10 +21,20 @@ const ZO_SETUP_STORAGE_KEYS = [
   TRANSFER_NUMBERS_STORAGE_KEY,
 ];
 
+/** One day's hours: start/end as "HH:mm" (24h), or null for closed. Index 0 = Monday, 6 = Sunday. */
+export type DayHours = { start: string; end: string } | null;
+
+/** Working hours for each day of the week. [0]=Monday ... [6]=Sunday. */
+export type WorkingHours = [DayHours, DayHours, DayHours, DayHours, DayHours, DayHours, DayHours];
+
 export interface ZoPhoneLine {
   id: string;
   name: string;
   locationIds: string[];
+  /** Practice name (when practice has multiple names) - for display in phone line card */
+  practiceName?: string;
+  /** When staff can accept transferred calls from Zo. Defaults to Mon–Fri 9am–5pm if unset. */
+  workingHours?: WorkingHours;
 }
 
 function getStoredPhoneLines(): ZoPhoneLine[] {
@@ -156,8 +166,12 @@ export function ZoSetupShell({
       }
       const transferData = sessionStorage.getItem(TRANSFER_NUMBERS_STORAGE_KEY);
       if (transferData && phoneLines.length > 0) {
-        const parsed = JSON.parse(transferData) as Record<string, { catchAll?: string }>;
-        const allHaveCatchAll = phoneLines.every((line) => (parsed[line.id]?.catchAll ?? "").trim().length > 0);
+        const parsed = JSON.parse(transferData) as
+          | { byLine?: Record<string, { catchAll?: string }> }
+          | Record<string, { catchAll?: string }>;
+        const byLine = parsed && "byLine" in parsed && parsed.byLine ? parsed.byLine : (parsed as Record<string, { catchAll?: string }>);
+        const catchAllDigits = (s: string) => (s ?? "").replace(/\D/g, "");
+        const allHaveCatchAll = phoneLines.every((line) => catchAllDigits(byLine[line.id]?.catchAll ?? "").length >= 10);
         if (allHaveCatchAll) {
           next.add("section-1-task-3");
         }
@@ -190,7 +204,8 @@ export function ZoSetupShell({
   return (
     <ZoSetupStateContext.Provider value={stateContextValue}>
     <ZoSetupBackContext.Provider value={backContextValue}>
-    <div className="h-screen flex flex-col bg-[var(--background-default-white)]">
+    {/* suppressHydrationWarning: Cursor preview/instrumentation injects data-cursor-element-id on the client, causing server/client attribute mismatch */}
+    <div className="h-screen flex flex-col bg-[var(--background-default-white)]" suppressHydrationWarning>
       {/* Top bar: Logo left, Save and exit right — match homepage nav height (80px) */}
       <header className="flex shrink-0 h-[80px] items-center justify-between border-b border-[var(--stroke-default)] bg-[var(--background-default-white)] px-6">
         <NextLink href="/" aria-label="Zocdoc home" className="shrink-0">
@@ -292,12 +307,12 @@ export function ZoSetupShell({
             <div>
               {!isWelcomeStep &&
                 (hasInTaskBack ? (
-                  <Button variant="secondary" size="default" onClick={handleInTaskBack}>
+                  <Button variant="tertiary" size="default" onClick={handleInTaskBack}>
                     Back
                   </Button>
                 ) : prevSlug ? (
                   <NextLink href={`${flowBasePath}/${prevSlug}`}>
-                    <Button variant="secondary" size="default">
+                    <Button variant="tertiary" size="default">
                       Back
                     </Button>
                   </NextLink>
