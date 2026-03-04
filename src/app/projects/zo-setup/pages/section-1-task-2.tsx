@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useContext, useEffect } from "react";
 import {
-  Container,
   Section,
   Header,
   RadioGroup,
@@ -321,7 +320,9 @@ export default function PhoneLinesTask() {
 
   const goBackToPart1 = useCallback(() => {
     setPhase("select");
-    setChoice("");
+    const storedChoice = typeof window !== "undefined" ? sessionStorage.getItem(PHONE_LINES_CHOICE_KEY) : null;
+    const validChoice = storedChoice === "one" || storedChoice === "per-location" || storedChoice === "regional";
+    setChoice(validChoice ? (storedChoice as PhoneSystemChoice) : "");
     setCustomLines([]);
     setLocationSearchByLineId({});
     setLocationSearchExpandedByLineId({});
@@ -336,11 +337,14 @@ export default function PhoneLinesTask() {
   }, [phase, goBackToPart1, setInTaskBackHandler]);
 
   return (
-    <div className="flex-1 flex flex-col">
-      <Container className={phase === "loading" ? "flex-1 flex flex-col min-h-0" : undefined}>
-        <Section size="2" className={phase === "loading" ? "flex-1 flex flex-col min-h-0" : undefined}>
+    <div className={phase === "loading" ? "flex-1 flex flex-col min-h-0" : "flex-1 flex flex-col"}>
+      <Section size="2" className={phase === "loading" ? "flex-1 flex flex-col min-h-0" : undefined}>
           {phase !== "loading" && (
-            <Header
+            <>
+              <p className="text-[12px] leading-[16px] font-medium tracking-[0.12px] text-[var(--text-whisper)] mb-1">
+                Step {phase === "select" ? 1 : 2} of 2
+              </p>
+              <Header
               title={
                 phase === "select"
                   ? "How does your practice receive calls?"
@@ -360,9 +364,10 @@ export default function PhoneLinesTask() {
                         : "We'll set up Zo phone lines based on how your practice receives calls."
               }
             />
+            </>
           )}
 
-          <div className={phase === "loading" ? "flex-1 flex flex-col min-h-0 mt-8 max-w-xl" : "mt-8 flex flex-col gap-8 max-w-xl"}>
+          <div className={phase === "loading" ? "flex-1 flex flex-col min-h-0 mt-8" : "mt-8 flex flex-col gap-8"}>
             {phase === "select" && (
               <>
                 <RadioGroup
@@ -723,8 +728,7 @@ export default function PhoneLinesTask() {
             )}
 
           </div>
-        </Section>
-      </Container>
+      </Section>
     </div>
   );
 }

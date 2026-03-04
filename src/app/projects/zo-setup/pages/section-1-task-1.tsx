@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import {
-  Container,
   Section,
   Header,
   Button,
@@ -110,14 +109,13 @@ export default function PracticeInformation() {
 
   return (
     <div className="flex-1 flex flex-col">
-      <Container>
-        <Section size="2">
+      <Section size="2">
           <Header
             title="Let's get the basics right"
             subbody="Listen to how Zo pronounces your practice's name and let us know how it sounds."
           />
 
-          <div className="mt-8 flex flex-col gap-8 max-w-xl">
+          <div className="mt-8 flex flex-col gap-8">
             {/* Practice name + play (preview container) */}
             <div className="flex flex-col gap-2">
               <span className="text-[16px] leading-[26px] font-semibold text-[var(--text-default)]">
@@ -243,8 +241,7 @@ export default function PracticeInformation() {
               )}
             </div>
           </div>
-        </Section>
-      </Container>
+      </Section>
     </div>
   );
 }

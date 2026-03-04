@@ -60,6 +60,11 @@ export const ZoSetupBackContext = React.createContext<{
   setInTaskBackHandler: (handler: (() => void) | null) => void;
 }>({ setInTaskBackHandler: () => {} });
 
+/** Optional in-task next handler (e.g. advance to step 2 within the same task; overrides normal Continue navigation) */
+export const ZoSetupNextContext = React.createContext<{
+  setInTaskNextHandler: (handler: (() => void) | null) => void;
+}>({ setInTaskNextHandler: () => {} });
+
 /** Shared state for the Zo setup flow (e.g. phone lines from task 2 for use in task 3) */
 export const ZoSetupStateContext = React.createContext<{
   phoneLines: ZoPhoneLine[];
@@ -104,6 +109,8 @@ export function ZoSetupShell({
 
   const inTaskBackHandlerRef = useRef<(() => void) | null>(null);
   const [hasInTaskBack, setHasInTaskBack] = useState(false);
+  const inTaskNextHandlerRef = useRef<(() => void) | null>(null);
+  const [hasInTaskNext, setHasInTaskNext] = useState(false);
   const [phoneLines, setPhoneLinesState] = useState<ZoPhoneLine[]>(() => []);
 
   const isPageDisabled = useCallback((slug: string) => {
@@ -139,6 +146,8 @@ export function ZoSetupShell({
   useEffect(() => {
     inTaskBackHandlerRef.current = null;
     setHasInTaskBack(false);
+    inTaskNextHandlerRef.current = null;
+    setHasInTaskNext(false);
   }, [currentPageSlug]);
 
   // Hydrate phone lines from sessionStorage after mount (e.g. when shell remounts after navigation)
@@ -169,7 +178,12 @@ export function ZoSetupShell({
         const parsed = JSON.parse(transferData) as
           | { byLine?: Record<string, { catchAll?: string }> }
           | Record<string, { catchAll?: string }>;
-        const byLine = parsed && "byLine" in parsed && parsed.byLine ? parsed.byLine : (parsed as Record<string, { catchAll?: string }>);
+        const byLine: Record<string, { catchAll?: string }> =
+          parsed && "byLine" in parsed && parsed.byLine
+            ? parsed.byLine
+            : parsed && typeof parsed === "object"
+              ? (parsed as Record<string, { catchAll?: string }>)
+              : {};
         const catchAllDigits = (s: string) => (s ?? "").replace(/\D/g, "");
         const allHaveCatchAll = phoneLines.every((line) => catchAllDigits(byLine[line.id]?.catchAll ?? "").length >= 10);
         if (allHaveCatchAll) {
@@ -187,13 +201,27 @@ export function ZoSetupShell({
     setHasInTaskBack(!!handler);
   }, []);
 
+  const setInTaskNextHandlerStable = useCallback((handler: (() => void) | null) => {
+    inTaskNextHandlerRef.current = handler;
+    setHasInTaskNext(!!handler);
+  }, []);
+
   const handleInTaskBack = useCallback(() => {
     inTaskBackHandlerRef.current?.();
+  }, []);
+
+  const handleInTaskNext = useCallback(() => {
+    inTaskNextHandlerRef.current?.();
   }, []);
 
   const backContextValue = React.useMemo(
     () => ({ setInTaskBackHandler: setInTaskBackHandlerStable }),
     [setInTaskBackHandlerStable]
+  );
+
+  const nextContextValue = React.useMemo(
+    () => ({ setInTaskNextHandler: setInTaskNextHandlerStable }),
+    [setInTaskNextHandlerStable]
   );
 
   const stateContextValue = React.useMemo(
@@ -204,6 +232,7 @@ export function ZoSetupShell({
   return (
     <ZoSetupStateContext.Provider value={stateContextValue}>
     <ZoSetupBackContext.Provider value={backContextValue}>
+    <ZoSetupNextContext.Provider value={nextContextValue}>
     {/* suppressHydrationWarning: Cursor preview/instrumentation injects data-cursor-element-id on the client, causing server/client attribute mismatch */}
     <div className="h-screen flex flex-col bg-[var(--background-default-white)]" suppressHydrationWarning>
       {/* Top bar: Logo left, Save and exit right — match homepage nav height (80px) */}
@@ -296,7 +325,7 @@ export function ZoSetupShell({
             <div
               className={cn(
                 "flex flex-col w-full mx-auto px-6",
-                isWelcomeStep ? "max-w-[1080px] min-h-full" : currentPageSlug === "section-1-task-2" ? "max-w-[800px] min-h-full" : "max-w-[800px]"
+                isWelcomeStep ? "max-w-[1080px] min-h-full" : "max-w-[648px] min-h-full"
               )}
             >
               {children}
@@ -333,11 +362,17 @@ export function ZoSetupShell({
                 </NextLink>
               )}
               {nextSlug ? (
-                <NextLink href={`${flowBasePath}/${nextSlug}`}>
-                  <Button variant="primary" size="default">
-                    {isWelcomeStep ? "Get started" : "Continue"}
+                hasInTaskNext ? (
+                  <Button variant="primary" size="default" onClick={handleInTaskNext}>
+                    Continue
                   </Button>
-                </NextLink>
+                ) : (
+                  <NextLink href={`${flowBasePath}/${nextSlug}`}>
+                    <Button variant="primary" size="default">
+                      {isWelcomeStep ? "Get started" : "Continue"}
+                    </Button>
+                  </NextLink>
+                )
               ) : (
                 <NextLink href="/">
                   <Button variant="primary" size="default">
@@ -350,6 +385,7 @@ export function ZoSetupShell({
         </main>
       </div>
     </div>
+    </ZoSetupNextContext.Provider>
     </ZoSetupBackContext.Provider>
     </ZoSetupStateContext.Provider>
   );

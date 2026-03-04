@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useContext, useEffect, useRef } from "react";
 import {
-  Container,
   Section,
   Header,
   Button,
@@ -22,7 +21,7 @@ import {
   DrawerTitle,
   DrawerDescription,
 } from "@/components/vibezz";
-import { ZoSetupBackContext, ZoSetupStateContext } from "../zo-setup-shell";
+import { ZoSetupBackContext, ZoSetupNextContext, ZoSetupStateContext } from "../zo-setup-shell";
 import type { ZoPhoneLine } from "../zo-setup-shell";
 import { cn } from "@/lib/utils";
 import { formatPhoneInput, formatPhoneDisplay, getPhoneDigits } from "@/lib/phone";
@@ -113,6 +112,7 @@ type Phase = "catch-all" | "additional";
 export default function TransferNumbersTask() {
   const { phoneLines } = useContext(ZoSetupStateContext);
   const { setInTaskBackHandler } = useContext(ZoSetupBackContext);
+  const { setInTaskNextHandler } = useContext(ZoSetupNextContext);
   const lines = phoneLines.length > 0 ? phoneLines : [DEFAULT_LINE];
 
   const hasRestoredRef = useRef(false);
@@ -188,6 +188,10 @@ export default function TransferNumbersTask() {
     setPhase("catch-all");
   }, []);
 
+  const allCatchAllFilled = lines.every(
+    (line) => getPhoneDigits(catchAllByLineId[line.id] ?? "").length >= 10
+  );
+
   useEffect(() => {
     if (phase === "additional") {
       setInTaskBackHandler(goBackToCatchAll);
@@ -196,9 +200,13 @@ export default function TransferNumbersTask() {
     setInTaskBackHandler(null);
   }, [phase, goBackToCatchAll, setInTaskBackHandler]);
 
-  const allCatchAllFilled = lines.every(
-    (line) => getPhoneDigits(catchAllByLineId[line.id] ?? "").length >= 10
-  );
+  useEffect(() => {
+    if (phase === "catch-all" && allCatchAllFilled) {
+      setInTaskNextHandler(goToAdditional);
+      return () => setInTaskNextHandler(null);
+    }
+    setInTaskNextHandler(null);
+  }, [phase, allCatchAllFilled, goToAdditional, setInTaskNextHandler]);
 
   // Add additional transfer: drawer state
   const [addDrawerType, setAddDrawerType] = useState<TransferType | null>(null);
@@ -256,22 +264,31 @@ export default function TransferNumbersTask() {
 
   return (
     <div className="flex-1 flex flex-col">
-      <Container>
-        <Section size="2">
+      <Section size="2">
           {phase === "catch-all" && (
-            <Header
-              title="Transfer numbers"
-              subbody="Each phone line must have a catch-all number. You can add transfer numbers by type in the next step."
-            />
+            <>
+              <p className="text-[12px] leading-[16px] font-medium tracking-[0.12px] text-[var(--text-whisper)] mb-1">
+                Step 1 of 2
+              </p>
+              <Header
+                title="Transfer numbers"
+                subbody="Each phone line must have a catch-all number. You can add transfer numbers by type in the next step."
+              />
+            </>
           )}
           {phase === "additional" && (
-            <Header
-              title="Additional transfer numbers"
-              subbody="Add numbers by type to route specific requests (e.g. billing, prescriptions). Apply a number to all phone lines or select which lines."
-            />
+            <>
+              <p className="text-[12px] leading-[16px] font-medium tracking-[0.12px] text-[var(--text-whisper)] mb-1">
+                Step 2 of 2
+              </p>
+              <Header
+                title="Additional transfer numbers"
+                subbody="Add numbers by type to route specific requests (e.g. billing, prescriptions). Apply a number to all phone lines or select which lines."
+              />
+            </>
           )}
 
-          <div className="mt-8 flex flex-col gap-8 max-w-xl">
+          <div className="mt-8 flex flex-col gap-8">
             {phase === "catch-all" && (
               <>
                 <div className="rounded-xl border border-[var(--stroke-default)] bg-[var(--background-default-white)] overflow-hidden">
@@ -315,15 +332,6 @@ export default function TransferNumbersTask() {
                     Phone number must be different than the number patients call.
                   </p>
                 </div>
-                <Button
-                  variant="primary"
-                  size="default"
-                  onClick={goToAdditional}
-                  disabled={!allCatchAllFilled}
-                  className="w-fit"
-                >
-                  Continue to additional transfer numbers
-                </Button>
               </>
             )}
 
@@ -466,8 +474,7 @@ export default function TransferNumbersTask() {
               </DrawerFooter>
             </DrawerContent>
           </Drawer>
-        </Section>
-      </Container>
+      </Section>
     </div>
   );
 }
