@@ -178,12 +178,13 @@ export function ZoSetupShell({
         const parsed = JSON.parse(transferData) as
           | { byLine?: Record<string, { catchAll?: string }> }
           | Record<string, { catchAll?: string }>;
-        const byLine: Record<string, { catchAll?: string }> =
+        const byLine = (
           parsed && "byLine" in parsed && parsed.byLine
             ? parsed.byLine
             : parsed && typeof parsed === "object"
               ? (parsed as Record<string, { catchAll?: string }>)
-              : {};
+              : {}
+        ) as Record<string, { catchAll?: string }>;
         const catchAllDigits = (s: string) => (s ?? "").replace(/\D/g, "");
         const allHaveCatchAll = phoneLines.every((line) => catchAllDigits(byLine[line.id]?.catchAll ?? "").length >= 10);
         if (allHaveCatchAll) {
