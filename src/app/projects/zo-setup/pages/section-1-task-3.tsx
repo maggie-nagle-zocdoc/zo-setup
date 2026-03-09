@@ -293,12 +293,13 @@ export default function TransferNumbersTask() {
       return;
     }
 
+    const selectedType = addDrawerType as TransferType;
     const lineIds = addDrawerPhoneLines === "__all__" ? lines.map((l) => l.id) : [addDrawerPhoneLines];
     setAdditionalTransfers((prev) => [
       ...prev,
       {
         id: crypto.randomUUID(),
-        type: addDrawerType,
+        type: selectedType,
         number: addDrawerNumber.trim(),
         lineIds,
       },
