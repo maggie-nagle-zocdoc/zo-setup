@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useContext, useEffect } from "react";
+import { useState, useCallback, useContext, useEffect, type FocusEvent } from "react";
 import {
   Section,
   Header,
@@ -30,7 +30,7 @@ import {
   TooltipTrigger,
 } from "@/components/vibezz";
 import { cn } from "@/lib/utils";
-import { ZoSetupBackContext, ZoSetupStateContext, type WorkingHours } from "../zo-setup-shell";
+import { ZoSetupBackContext, ZoSetupContinueValidationContext, ZoSetupStateContext, type WorkingHours } from "../zo-setup-shell";
 import { PRACTICE_INFO_STORAGE_KEY } from "./section-1-task-1";
 
 const DEFAULT_PRACTICE_NAME = "Soho Medical";
@@ -149,9 +149,13 @@ function getStoredPhoneLines(): PhoneLineRow[] {
 
 export default function PhoneLinesTask() {
   const { setPhoneLines } = useContext(ZoSetupStateContext);
+  const { setContinueValidationHandler } = useContext(ZoSetupContinueValidationContext);
   const [choice, setChoice] = useState<PhoneSystemChoice>("");
   const [phase, setPhase] = useState<Phase>("select");
   const [customLines, setCustomLines] = useState<PhoneLineRow[]>([]);
+  const [continueError, setContinueError] = useState<string | null>(null);
+  const [lineNameErrors, setLineNameErrors] = useState<Record<string, string>>({});
+  const [lineLocationErrors, setLineLocationErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const stored = getStoredPhoneLines();
@@ -175,6 +179,9 @@ export default function PhoneLinesTask() {
       if (phase !== "select") return;
       const v = value as PhoneSystemChoice;
       setChoice(v);
+      setContinueError(null);
+      setLineNameErrors({});
+      setLineLocationErrors({});
       setPhase("loading");
       setTimeout(() => {
         setPhase("result");
@@ -214,6 +221,9 @@ export default function PhoneLinesTask() {
   const [addLineError, setAddLineError] = useState<string | null>(null);
 
   const addCustomLine = useCallback(() => {
+    setContinueError(null);
+    setLineNameErrors({});
+    setLineLocationErrors({});
     setCustomLines((prev) => [
       ...prev,
       { id: crypto.randomUUID(), name: "", locationIds: [], workingHours: DEFAULT_WORKING_HOURS },
@@ -232,9 +242,25 @@ export default function PhoneLinesTask() {
 
   const removeCustomLine = useCallback((id: string) => {
     setCustomLines((prev) => prev.filter((l) => l.id !== id));
+    setLineNameErrors((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    setLineLocationErrors((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
   }, []);
 
   const addLocationToLine = useCallback((lineId: string, locationIndex: number) => {
+    setContinueError(null);
+    setLineLocationErrors((prev) => {
+      const next = { ...prev };
+      delete next[lineId];
+      return next;
+    });
     setCustomLines((prev) =>
       prev.map((line) => {
         if (line.id !== lineId) return line;
@@ -246,6 +272,12 @@ export default function PhoneLinesTask() {
   }, []);
 
   const removeLocationFromLine = useCallback((lineId: string, locationIndex: number) => {
+    setContinueError(null);
+    setLineLocationErrors((prev) => {
+      const next = { ...prev };
+      delete next[lineId];
+      return next;
+    });
     setCustomLines((prev) =>
       prev.map((line) => {
         if (line.id !== lineId) return line;
@@ -258,11 +290,25 @@ export default function PhoneLinesTask() {
   const [locationSearchFocusedLineId, setLocationSearchFocusedLineId] = useState<string | null>(null);
   const [locationSearchExpandedByLineId, setLocationSearchExpandedByLineId] = useState<Record<string, boolean>>({});
 
+  const handleLocationSearchWrapperBlur = useCallback((lineId: string, e: FocusEvent<HTMLDivElement>) => {
+    const nextFocused = e.relatedTarget as Node | null;
+    if (nextFocused && e.currentTarget.contains(nextFocused)) return;
+    if (locationSearchFocusedLineId === lineId) {
+      setLocationSearchFocusedLineId(null);
+    }
+  }, [locationSearchFocusedLineId]);
+
   const toggleLocationSearch = useCallback((lineId: string) => {
     setLocationSearchExpandedByLineId((prev) => ({ ...prev, [lineId]: !prev[lineId] }));
   }, []);
 
   const updateLineName = useCallback((lineId: string, name: string) => {
+    setContinueError(null);
+    setLineNameErrors((prev) => {
+      const next = { ...prev };
+      delete next[lineId];
+      return next;
+    });
     setCustomLines((prev) => prev.map((l) => (l.id === lineId ? { ...l, name } : l)));
   }, []);
 
@@ -336,6 +382,46 @@ export default function PhoneLinesTask() {
     setInTaskBackHandler(null);
   }, [phase, goBackToPart1, setInTaskBackHandler]);
 
+  const validateContinue = useCallback(() => {
+    if (phase === "loading") return false;
+    if (phase === "select") {
+      if (choice) return true;
+      setContinueError("Make a selection to continue");
+      return false;
+    }
+    if (phase === "result") {
+      if (customLines.length === 0) {
+        setContinueError("Add at least one phone line to continue.");
+        return false;
+      }
+      const nextNameErrors: Record<string, string> = {};
+      const nextLocationErrors: Record<string, string> = {};
+      customLines.forEach((line) => {
+        if (line.name.trim().length === 0) {
+          nextNameErrors[line.id] = "Phone line name is required";
+        }
+        if (line.locationIds.length === 0) {
+          nextLocationErrors[line.id] = "At least one location is required for each phone line";
+        }
+      });
+      setLineNameErrors(nextNameErrors);
+      setLineLocationErrors(nextLocationErrors);
+      if (Object.keys(nextNameErrors).length > 0 || Object.keys(nextLocationErrors).length > 0) {
+        setContinueError(null);
+        return false;
+      }
+      setLineNameErrors({});
+      setLineLocationErrors({});
+    }
+    setContinueError(null);
+    return true;
+  }, [phase, choice, customLines]);
+
+  useEffect(() => {
+    setContinueValidationHandler(validateContinue);
+    return () => setContinueValidationHandler(null);
+  }, [validateContinue, setContinueValidationHandler]);
+
   return (
     <div className={phase === "loading" ? "flex-1 flex flex-col min-h-0" : "flex-1 flex flex-col"}>
       <Section size="2" className={phase === "loading" ? "flex-1 flex flex-col min-h-0" : undefined}>
@@ -348,6 +434,8 @@ export default function PhoneLinesTask() {
               title={
                 phase === "select"
                   ? "How does your practice receive calls?"
+                  : phase === "result" && choice === "regional"
+                    ? "Create your Zo phone lines"
                   : phase === "result"
                     ? "Review your Zo phone lines"
                     : "Phone lines"
@@ -379,6 +467,11 @@ export default function PhoneLinesTask() {
                     <RadioCard key={c.value} value={c.value} label={c.label} icon={c.icon} />
                   ))}
                 </RadioGroup>
+                {continueError && (
+                  <p className="text-[14px] leading-[20px] font-medium text-[var(--text-error)]" role="alert">
+                    {continueError}
+                  </p>
+                )}
               </>
             )}
 
@@ -429,6 +522,8 @@ export default function PhoneLinesTask() {
                               className="flex-1 min-w-0"
                               placeholder="e.g. New York region"
                               helperText="This name is internal and never used on patient calls"
+                              state={lineNameErrors[line.id] ? "error" : "default"}
+                              errorMessage={lineNameErrors[line.id]}
                             />
                             {customLines.length > 1 && (
                               <TooltipProvider>
@@ -466,7 +561,11 @@ export default function PhoneLinesTask() {
                                   )}
                                 </div>
                                 {locationSearchExpandedByLineId[line.id] && unaddedLocations.length > 0 && (
-                                  <div className="relative">
+                                  <div
+                                    className="relative"
+                                    onFocus={() => setLocationSearchFocusedLineId(line.id)}
+                                    onBlur={(e) => handleLocationSearchWrapperBlur(line.id, e)}
+                                  >
                                     <Input
                                       placeholder="Search to add locations"
                                       value={locationSearchByLineId[line.id] ?? ""}
@@ -475,10 +574,6 @@ export default function PhoneLinesTask() {
                                           ...prev,
                                           [line.id]: e.target.value,
                                         }))
-                                      }
-                                      onFocus={() => setLocationSearchFocusedLineId(line.id)}
-                                      onBlur={() =>
-                                        setTimeout(() => setLocationSearchFocusedLineId(null), 150)
                                       }
                                       size="small"
                                     />
@@ -498,6 +593,7 @@ export default function PhoneLinesTask() {
                                                   addLocationToLine(line.id, idx);
                                                   setLocationSearchByLineId((prev) => ({ ...prev, [line.id]: "" }));
                                                   setAddLineError(null);
+                                                  setLocationSearchFocusedLineId(null);
                                                 }}
                                               >
                                                 {loc}
@@ -515,7 +611,11 @@ export default function PhoneLinesTask() {
                                 )}
                               </>
                             ) : (
-                              <div className="relative">
+                              <div
+                                className="relative"
+                                onFocus={() => setLocationSearchFocusedLineId(line.id)}
+                                onBlur={(e) => handleLocationSearchWrapperBlur(line.id, e)}
+                              >
                                 <FieldLabel size="small" required>Locations</FieldLabel>
                                 <Input
                                   placeholder="Search to add locations"
@@ -525,10 +625,6 @@ export default function PhoneLinesTask() {
                                       ...prev,
                                       [line.id]: e.target.value,
                                     }))
-                                  }
-                                  onFocus={() => setLocationSearchFocusedLineId(line.id)}
-                                  onBlur={() =>
-                                    setTimeout(() => setLocationSearchFocusedLineId(null), 150)
                                   }
                                   size="small"
                                   className="mt-2"
@@ -548,6 +644,7 @@ export default function PhoneLinesTask() {
                                             onClick={() => {
                                               addLocationToLine(line.id, idx);
                                               setLocationSearchByLineId((prev) => ({ ...prev, [line.id]: "" }));
+                                              setLocationSearchFocusedLineId(null);
                                             }}
                                           >
                                             {loc}
@@ -589,6 +686,11 @@ export default function PhoneLinesTask() {
                                 })}
                               </ul>
                             ) : null}
+                            {lineLocationErrors[line.id] && (
+                              <p className="text-[14px] leading-[20px] font-medium text-[var(--text-error)]" role="alert">
+                                {lineLocationErrors[line.id]}
+                              </p>
+                            )}
                           </div>
                           <div className="pt-4 border-t border-[var(--stroke-default)] flex flex-col gap-2">
                             <div className="flex items-center justify-between gap-4">
@@ -635,6 +737,11 @@ export default function PhoneLinesTask() {
                       <Button variant="secondary" size="small" onClick={handleAddAnotherPhoneLine} className="w-fit">
                         Add another phone line
                       </Button>
+                      {continueError && (
+                        <p className="text-[14px] leading-[20px] font-medium text-[var(--text-error)]" role="alert">
+                          {continueError}
+                        </p>
+                      )}
                       {addLineError && (
                         <p className="text-[14px] leading-[20px] font-medium text-[var(--text-error)]" role="alert">
                           {addLineError}

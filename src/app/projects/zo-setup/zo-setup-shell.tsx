@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, Logo, Icon } from "@/components/vibezz";
@@ -12,6 +12,7 @@ const PHONE_LINES_STORAGE_KEY = "zo-setup-phone-lines";
 const PHONE_LINES_CHOICE_KEY = "zo-setup-phone-lines-choice";
 const PRACTICE_INFO_STORAGE_KEY = "zo-setup-practice-info";
 const TRANSFER_NUMBERS_STORAGE_KEY = "zo-setup-transfer-numbers";
+const INTRO_COMPLETE_STORAGE_KEY = "zo-setup-intro-complete";
 
 /** SessionStorage keys used by the Zo setup flow (for reset) */
 const ZO_SETUP_STORAGE_KEYS = [
@@ -19,6 +20,7 @@ const ZO_SETUP_STORAGE_KEYS = [
   PHONE_LINES_CHOICE_KEY,
   PRACTICE_INFO_STORAGE_KEY,
   TRANSFER_NUMBERS_STORAGE_KEY,
+  INTRO_COMPLETE_STORAGE_KEY,
 ];
 
 /** One day's hours: start/end as "HH:mm" (24h), or null for closed. Index 0 = Monday, 6 = Sunday. */
@@ -64,6 +66,11 @@ export const ZoSetupBackContext = React.createContext<{
 export const ZoSetupNextContext = React.createContext<{
   setInTaskNextHandler: (handler: (() => void) | null) => void;
 }>({ setInTaskNextHandler: () => {} });
+
+/** Optional per-page continue validation (return false to block navigation) */
+export const ZoSetupContinueValidationContext = React.createContext<{
+  setContinueValidationHandler: (handler: (() => boolean) | null) => void;
+}>({ setContinueValidationHandler: () => {} });
 
 /** Shared state for the Zo setup flow (e.g. phone lines from task 2 for use in task 3) */
 export const ZoSetupStateContext = React.createContext<{
@@ -111,6 +118,7 @@ export function ZoSetupShell({
   const [hasInTaskBack, setHasInTaskBack] = useState(false);
   const inTaskNextHandlerRef = useRef<(() => void) | null>(null);
   const [hasInTaskNext, setHasInTaskNext] = useState(false);
+  const continueValidationHandlerRef = useRef<(() => boolean) | null>(null);
   const [phoneLines, setPhoneLinesState] = useState<ZoPhoneLine[]>(() => []);
 
   const isPageDisabled = useCallback((slug: string) => {
@@ -143,11 +151,12 @@ export function ZoSetupShell({
     storePhoneLines(lines);
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     inTaskBackHandlerRef.current = null;
     setHasInTaskBack(false);
     inTaskNextHandlerRef.current = null;
     setHasInTaskNext(false);
+    continueValidationHandlerRef.current = null;
   }, [currentPageSlug]);
 
   // Hydrate phone lines from sessionStorage after mount (e.g. when shell remounts after navigation)
@@ -169,6 +178,10 @@ export function ZoSetupShell({
         if (parsed.choice && parsed.choice.length > 0) {
           next.add("section-1-task-1");
         }
+      }
+      const introComplete = sessionStorage.getItem(INTRO_COMPLETE_STORAGE_KEY);
+      if (introComplete === "true") {
+        next.add("intro");
       }
       if (phoneLines.length > 0) {
         next.add("section-1-task-2");
@@ -207,6 +220,10 @@ export function ZoSetupShell({
     setHasInTaskNext(!!handler);
   }, []);
 
+  const setContinueValidationHandlerStable = useCallback((handler: (() => boolean) | null) => {
+    continueValidationHandlerRef.current = handler;
+  }, []);
+
   const handleInTaskBack = useCallback(() => {
     inTaskBackHandlerRef.current?.();
   }, []);
@@ -214,6 +231,23 @@ export function ZoSetupShell({
   const handleInTaskNext = useCallback(() => {
     inTaskNextHandlerRef.current?.();
   }, []);
+
+  const handleContinueToNext = useCallback(() => {
+    if (!nextSlug) return;
+    const validate = continueValidationHandlerRef.current;
+    if (validate && !validate()) return;
+    router.push(`${flowBasePath}/${nextSlug}`);
+  }, [nextSlug, router]);
+
+  const handleGetStarted = useCallback(() => {
+    if (!nextSlug) return;
+    try {
+      sessionStorage.setItem(INTRO_COMPLETE_STORAGE_KEY, "true");
+    } catch {
+      // ignore
+    }
+    router.push(`${flowBasePath}/${nextSlug}`);
+  }, [nextSlug, router]);
 
   const backContextValue = React.useMemo(
     () => ({ setInTaskBackHandler: setInTaskBackHandlerStable }),
@@ -225,6 +259,11 @@ export function ZoSetupShell({
     [setInTaskNextHandlerStable]
   );
 
+  const continueValidationContextValue = React.useMemo(
+    () => ({ setContinueValidationHandler: setContinueValidationHandlerStable }),
+    [setContinueValidationHandlerStable]
+  );
+
   const stateContextValue = React.useMemo(
     () => ({ phoneLines, setPhoneLines }),
     [phoneLines, setPhoneLines]
@@ -234,6 +273,7 @@ export function ZoSetupShell({
     <ZoSetupStateContext.Provider value={stateContextValue}>
     <ZoSetupBackContext.Provider value={backContextValue}>
     <ZoSetupNextContext.Provider value={nextContextValue}>
+    <ZoSetupContinueValidationContext.Provider value={continueValidationContextValue}>
     {/* suppressHydrationWarning: Cursor preview/instrumentation injects data-cursor-element-id on the client, causing server/client attribute mismatch */}
     <div className="h-screen flex flex-col bg-[var(--background-default-white)]" suppressHydrationWarning>
       {/* Top bar: Logo left, Save and exit right — match homepage nav height (80px) */}
@@ -261,7 +301,7 @@ export function ZoSetupShell({
       <div className="flex-1 flex min-h-0">
         {/* Section nav: skip to any section or page */}
         <aside
-          className="shrink-0 w-56 border-r border-[var(--stroke-default)] bg-[var(--background-default-greige)] overflow-y-auto"
+          className="shrink-0 w-56 border-r border-[var(--stroke-default)] bg-[var(--background-default-white)] overflow-y-auto"
           aria-label="Setup sections"
         >
           <nav className="p-3 flex flex-col gap-4">
@@ -304,7 +344,7 @@ export function ZoSetupShell({
                             className={cn(
                               "flex items-center gap-2 rounded-md px-2 py-1.5 text-[14px] leading-[20px] transition-colors",
                               isActive
-                                ? "font-semibold text-[var(--text-default)] bg-[var(--background-default-white)] border border-[var(--stroke-default)]"
+                                ? "font-semibold text-[var(--text-default)] bg-[rgba(249,248,247,1)] border border-[var(--stroke-default)]"
                                 : "text-[var(--text-secondary)] hover:text-[var(--text-default)] hover:bg-[var(--state-hover)]"
                             )}
                           >
@@ -326,7 +366,9 @@ export function ZoSetupShell({
             <div
               className={cn(
                 "flex flex-col w-full mx-auto px-6",
-                isWelcomeStep ? "max-w-[1080px] min-h-full" : "max-w-[648px] min-h-full"
+                isWelcomeStep || currentPageSlug === "section-1-task-3"
+                  ? "max-w-[800px] min-h-full"
+                  : "max-w-[648px] min-h-full"
               )}
             >
               {children}
@@ -367,12 +409,14 @@ export function ZoSetupShell({
                   <Button variant="primary" size="default" onClick={handleInTaskNext}>
                     Continue
                   </Button>
+                ) : isWelcomeStep ? (
+                  <Button variant="primary" size="default" onClick={handleGetStarted}>
+                    Get started
+                  </Button>
                 ) : (
-                  <NextLink href={`${flowBasePath}/${nextSlug}`}>
-                    <Button variant="primary" size="default">
-                      {isWelcomeStep ? "Get started" : "Continue"}
-                    </Button>
-                  </NextLink>
+                  <Button variant="primary" size="default" onClick={handleContinueToNext}>
+                    Continue
+                  </Button>
                 )
               ) : (
                 <NextLink href="/">
@@ -386,6 +430,7 @@ export function ZoSetupShell({
         </main>
       </div>
     </div>
+    </ZoSetupContinueValidationContext.Provider>
     </ZoSetupNextContext.Provider>
     </ZoSetupBackContext.Provider>
     </ZoSetupStateContext.Provider>

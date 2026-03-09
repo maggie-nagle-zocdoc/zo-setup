@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useContext, useCallback } from "react";
 import {
   Section,
   Header,
@@ -10,6 +10,7 @@ import {
   RadioGroup,
   RadioCard,
 } from "@/components/vibezz";
+import { ZoSetupContinueValidationContext } from "../zo-setup-shell";
 
 const EXAMPLE_PRACTICE_NAME = "Soho Medical";
 
@@ -41,12 +42,14 @@ function storePracticeInfo(data: StoredPracticeInfo) {
 }
 
 export default function PracticeInformation() {
+  const { setContinueValidationHandler } = useContext(ZoSetupContinueValidationContext);
   const [choice, setChoice] = useState<string>("");
   const [phonetic, setPhonetic] = useState("");
   const [showAdditional, setShowAdditional] = useState(false);
   const [additionalNames, setAdditionalNames] = useState<{ id: string; name: string; phonetic: string; showPhonetic: boolean }[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playingAdditionalIndex, setPlayingAdditionalIndex] = useState<number | null>(null);
+  const [continueError, setContinueError] = useState<string | null>(null);
 
   const hasRestoredRef = useRef(false);
 
@@ -107,6 +110,17 @@ export default function PracticeInformation() {
     });
   };
 
+  const validateContinue = useCallback(() => {
+    if (choice) return true;
+    setContinueError("Make a selection to continue");
+    return false;
+  }, [choice]);
+
+  useEffect(() => {
+    setContinueValidationHandler(validateContinue);
+    return () => setContinueValidationHandler(null);
+  }, [validateContinue, setContinueValidationHandler]);
+
   return (
     <div className="flex-1 flex flex-col">
       <Section size="2">
@@ -138,13 +152,21 @@ export default function PracticeInformation() {
             {/* Choice tiles: does it sound right? */}
             <RadioGroup
               value={choice}
-              onValueChange={setChoice}
+              onValueChange={(value) => {
+                setChoice(value);
+                setContinueError(null);
+              }}
               label="How does that sound?"
               className="flex flex-col gap-3 w-full"
             >
               <RadioCard value="sounds-good" label="Sounds good" />
               <RadioCard value="add-phonetic" label="I need to update the pronunciation" />
             </RadioGroup>
+            {continueError && (
+              <p className="text-[14px] leading-[20px] font-medium text-[var(--text-error)]" role="alert">
+                {continueError}
+              </p>
+            )}
 
             {/* Phonetic field when that option is chosen */}
             {choice === "add-phonetic" && (
