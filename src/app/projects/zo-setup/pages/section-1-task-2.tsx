@@ -835,7 +835,7 @@ export default function PhoneLinesTask() {
             )}
 
           </div>
-      </Section>
+        </Section>
     </div>
   );
 }

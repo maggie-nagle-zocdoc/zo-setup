@@ -15,12 +15,17 @@ const TRANSFER_NUMBERS_STORAGE_KEY = "zo-setup-transfer-numbers";
 const INTRO_COMPLETE_STORAGE_KEY = "zo-setup-intro-complete";
 
 /** SessionStorage keys used by the Zo setup flow (for reset) */
+const SCHEDULING_EXCLUSIONS_STORAGE_KEY = "zo-setup-scheduling-exclusions";
+const SCHEDULING_OPTIONS_STORAGE_KEY = "zo-setup-scheduling-options";
+
 const ZO_SETUP_STORAGE_KEYS = [
   PHONE_LINES_STORAGE_KEY,
   PHONE_LINES_CHOICE_KEY,
   PRACTICE_INFO_STORAGE_KEY,
   TRANSFER_NUMBERS_STORAGE_KEY,
   INTRO_COMPLETE_STORAGE_KEY,
+  SCHEDULING_EXCLUSIONS_STORAGE_KEY,
+  SCHEDULING_OPTIONS_STORAGE_KEY,
 ];
 
 /** One day's hours: start/end as "HH:mm" (24h), or null for closed. Index 0 = Monday, 6 = Sunday. */
@@ -204,6 +209,18 @@ export function ZoSetupShell({
           next.add("section-1-task-3");
         }
       }
+      const exclusionsRaw = sessionStorage.getItem(SCHEDULING_EXCLUSIONS_STORAGE_KEY);
+      if (exclusionsRaw) {
+        try {
+          const arr = JSON.parse(exclusionsRaw);
+          if (Array.isArray(arr) && arr.length > 0) next.add("section-2-task-1");
+        } catch {
+          // ignore
+        }
+      }
+      if (sessionStorage.getItem(SCHEDULING_OPTIONS_STORAGE_KEY)) {
+        next.add("section-2-task-2");
+      }
     } catch {
       // ignore
     }
@@ -307,7 +324,7 @@ export function ZoSetupShell({
           <nav className="p-3 flex flex-col gap-4">
             {sections.map((section) => (
               <div key={section.slug}>
-                <div className="text-[14px] leading-[20px] font-semibold text-[var(--text-default)] mb-1.5">
+                <div className="text-[12px] leading-[16px] font-medium tracking-[0.12px] text-[var(--text-whisper)] mb-1.5">
                   {section.name}
                 </div>
                 <ul className="flex flex-col gap-0.5">

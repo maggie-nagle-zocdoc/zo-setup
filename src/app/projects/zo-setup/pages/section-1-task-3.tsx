@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useContext, useEffect, useRef, useMemo } from "react";
+import { useState, useCallback, useContext, useEffect, useLayoutEffect, useRef, useMemo } from "react";
 import {
   Section,
   Header,
@@ -129,11 +129,24 @@ export default function TransferNumbersTask() {
   const { phoneLines } = useContext(ZoSetupStateContext);
   const { setInTaskBackHandler } = useContext(ZoSetupBackContext);
   const { setInTaskNextHandler } = useContext(ZoSetupNextContext);
-  const lines = phoneLines.length > 0 ? phoneLines : [DEFAULT_LINE];
+  const [hasMounted, setHasMounted] = useState(false);
+  // Use stable default until after mount so server and initial client render match (avoids hydration mismatch from sessionStorage-restored phone lines)
+  const lines = hasMounted && phoneLines.length > 0 ? phoneLines : [DEFAULT_LINE];
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   const hasRestoredRef = useRef(false);
+  const catchAllErrorRef = useRef<HTMLParagraphElement>(null);
   const [phase, setPhase] = useState<Phase>("catch-all");
   const [catchAllContinueError, setCatchAllContinueError] = useState<string | null>(null);
+
+  useLayoutEffect(() => {
+    if (catchAllContinueError && catchAllErrorRef.current) {
+      catchAllErrorRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [catchAllContinueError]);
 
   const [catchAllByLineId, setCatchAllByLineId] = useState<Record<string, string>>(() => {
     const stored = getStoredTransferState();
@@ -441,7 +454,11 @@ export default function TransferNumbersTask() {
                   </table>
                 </div>
                 {catchAllContinueError && (
-                  <p className="text-[14px] leading-[20px] font-medium text-[var(--text-error)]" role="alert">
+                  <p
+                    ref={catchAllErrorRef}
+                    className="text-[14px] leading-[20px] font-medium text-[var(--text-error)]"
+                    role="alert"
+                  >
                     {catchAllContinueError}
                   </p>
                 )}
