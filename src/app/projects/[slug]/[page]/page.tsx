@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import NextLink from "next/link";
-import { IconButton, Logo, Button } from "@/components/vibezz";
+import { IconButton, Logo } from "@/components/vibezz";
 import { ZoSetupShell } from "../../zo-setup/zo-setup-shell";
 import { projects } from "../../registry";
 
@@ -49,14 +49,9 @@ export default async function DynamicPage({ params }: Props) {
   if (isZoSetupComplete) {
     return (
       <div className="h-screen flex flex-col bg-[var(--background-default-white)]">
-        <header className="flex shrink-0 h-[80px] items-center justify-between border-b border-[var(--stroke-default)] bg-[var(--background-default-white)] px-6">
+        <header className="flex shrink-0 h-[80px] items-center border-b border-[var(--stroke-default)] bg-[var(--background-default-white)] px-6">
           <NextLink href="/" aria-label="Zocdoc home" className="shrink-0">
             <Logo size="small" />
-          </NextLink>
-          <NextLink href="/">
-            <Button variant="ghost" size="small">
-              Save and exit
-            </Button>
           </NextLink>
         </header>
         <main className="flex-1 min-h-0 overflow-auto">

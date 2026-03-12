@@ -252,7 +252,7 @@ export default function PracticeInformation() {
                 <TextField
                   label="Phonetic spelling"
                   placeholder="e.g. SO-ho MED-i-cal"
-                  helperText="Spell out how the name should sound so Zo pronounces it correctly for callers."
+                  helperText="Spell out how the name should sound and preview the pronunciation again"
                   value={phonetic}
                   onChange={(e) => setPhonetic(e.target.value)}
                   size="default"
