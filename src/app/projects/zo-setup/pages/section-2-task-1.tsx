@@ -15,6 +15,7 @@ import {
   DrawerDescription,
   Checkbox,
 } from "@/components/vibezz";
+import { PLACEHOLDER_LOCATION_NAMES } from "../data";
 
 export const SCHEDULING_EXCLUSIONS_STORAGE_KEY = "zo-setup-scheduling-exclusions";
 
@@ -51,23 +52,38 @@ const MOCK_PROVIDERS = [
   { id: "p1", name: "Catalina Alvarez", subName: "Audiology" },
   { id: "p2", name: "Evelyn Hamilton", subName: "General Surgery" },
   { id: "p3", name: "Janet Lay-Claypon", subName: "Primary care" },
+  { id: "p4", name: "Marcus Chen", subName: "Dermatology" },
+  { id: "p5", name: "Sarah Okonkwo", subName: "Cardiology" },
+  { id: "p6", name: "David Park", subName: "Orthopedics" },
+  { id: "p7", name: "Rachel Torres", subName: "Pediatrics" },
+  { id: "p8", name: "James Wilson", subName: "OB-GYN" },
+  { id: "p9", name: "Priya Sharma", subName: "Endocrinology" },
+  { id: "p10", name: "Michael Foster", subName: "Psychiatry" },
 ];
 
 const MOCK_VISIT_REASONS = [
   { id: "vr1", name: "Botox injection", subName: "New patients" },
   { id: "vr2", name: "Surgery consultation", subName: "New patients, existing patients" },
   { id: "vr3", name: "Cancer screening", subName: "New patients, existing patients" },
+  { id: "vr4", name: "Annual physical", subName: "New patients, existing patients" },
+  { id: "vr5", name: "Follow-up visit", subName: "Existing patients" },
+  { id: "vr6", name: "Skin check", subName: "New patients, existing patients" },
+  { id: "vr7", name: "Mental health intake", subName: "New patients" },
+  { id: "vr8", name: "Vaccination", subName: "New patients, existing patients" },
+  { id: "vr9", name: "Prenatal visit", subName: "Existing patients" },
+  { id: "vr10", name: "Injury evaluation", subName: "New patients, existing patients" },
 ];
 
-const MOCK_LOCATIONS = [
-  { id: "l1", name: "123 Main street", subName: "Virtual" },
-  { id: "l2", name: "66 Lexington Ave", subName: "In-person" },
-];
+const MOCK_LOCATIONS = PLACEHOLDER_LOCATION_NAMES.map((name, i) => ({
+  id: `l${i + 1}`,
+  name,
+  subName: "In-person",
+}));
 
 const TYPE_LABELS: Record<ExclusionType, string> = {
-  provider: "Provider exclusions",
-  visit_reason: "Visit reason exclusions",
-  location: "Location exclusions",
+  provider: "Excluded providers",
+  visit_reason: "Excluded visit reasons",
+  location: "Excluded locations",
 };
 
 const TYPE_LABELS_SINGULAR: Record<ExclusionType, string> = {
@@ -152,19 +168,30 @@ export default function SchedulingExclusionsTask() {
     <div className="flex-1 flex flex-col">
       <Section size="2">
         <Header
-          title="Manage how Zo schedules"
-          subbody="By default Zo will be able to schedule any provider, visit reason, and location at your practice that are listed on Zocdoc"
+          title="Manage Zo exclusions"
+          subbody="If no exclusions are added Zo will schedule any provider, visit reason, and location at your practice that are available on Zocdoc"
         />
 
-        <div className="mt-8 flex flex-col gap-6">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-[18px] leading-[24px] font-semibold text-[var(--text-default)] md:text-[20px] md:leading-[28px]">
+        <div
+          className="mt-6 flex gap-3 items-center rounded-2xl border border-[var(--stroke-default)] bg-[var(--background-brand-yellow-dark)] p-6"
+          role="region"
+          aria-label="What is an exclusion?"
+        >
+          <div className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full bg-[var(--color-yellow-10)]">
+            <Icon name="lightbulb" size="40" filled={false} className="text-[var(--icon-default)]" />
+          </div>
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <p className="text-[16px] font-semibold leading-[26px] text-[var(--text-default)]">
               What is an exclusion?
-            </h2>
-            <p className="text-[14px] leading-[20px] text-[var(--text-secondary)]">
-              You can exclude anything you don't want Zo to schedule over the phone. Anything that is excluded will be transferred to your staff.
+            </p>
+            <p className="text-[14px] font-medium leading-[20px] text-[var(--text-default)]">
+              You can exclude anything you don&apos;t want Zo to schedule over the phone. Anything that is excluded will
+              be transferred to your staff.
             </p>
           </div>
+        </div>
+
+        <div className="mt-8 flex flex-col gap-6">
           {(["provider", "visit_reason", "location"] as const).map((type) => {
             const count = MOCK_COUNTS[type];
             const excluded = exclusionsByType(type);
@@ -251,7 +278,8 @@ export default function SchedulingExclusionsTask() {
                       <Checkbox
                         key={item.id}
                         size="small"
-                        label={item.subName ? `${item.name} — ${item.subName}` : item.name}
+                        label={item.name}
+                        description={item.subName}
                         checked={selectedItemIds.has(item.id)}
                         onCheckedChange={(checked) => {
                           setSelectedItemIds((prev) => {

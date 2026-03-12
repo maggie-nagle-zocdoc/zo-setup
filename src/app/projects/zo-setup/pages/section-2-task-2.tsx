@@ -6,6 +6,8 @@ import {
   Header,
   Checkbox,
   SwitchField,
+  RadioGroup,
+  RadioField,
 } from "@/components/vibezz";
 
 export const SCHEDULING_OPTIONS_STORAGE_KEY = "zo-setup-scheduling-options";
@@ -14,6 +16,8 @@ export interface SchedulingOptionsState {
   requiredInsuranceCarrier: boolean;
   requiredPlan: boolean;
   requiredMemberId: boolean;
+  requiredAddress: boolean;
+  requiredEmail: boolean;
   transferSelfPay: boolean;
   transferSwitchProvider: boolean;
   smsConfirmations: boolean;
@@ -23,6 +27,8 @@ const DEFAULT_OPTIONS: SchedulingOptionsState = {
   requiredInsuranceCarrier: false,
   requiredPlan: false,
   requiredMemberId: false,
+  requiredAddress: false,
+  requiredEmail: false,
   transferSelfPay: false,
   transferSwitchProvider: false,
   smsConfirmations: true,
@@ -67,20 +73,22 @@ export default function SchedulingOptionsTask() {
   return (
     <div className="flex-1 flex flex-col">
       <Section size="2">
-        <Header
-          title="Scheduling options"
-          subbody="What information should Zo collect? When should Zo transfer to staff? How should Zo confirm with patients?"
-        />
+        <Header title="Scheduling options" />
 
         <div className="mt-8 flex flex-col gap-8">
-          <section className="flex flex-col gap-4">
-            <h2 className="text-[18px] leading-[24px] font-semibold text-[var(--text-default)]">
-              What information should Zo collect from patients before scheduling?
-            </h2>
-            <p className="text-[14px] leading-[20px] text-[var(--text-secondary)]">
-              Zo will ask for any options you select below before completing a scheduling action.
-            </p>
-            <div className="flex flex-col gap-3">
+          <section className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1">
+              <h2 className="text-[18px] leading-[24px] font-semibold text-[var(--text-default)]">
+                Patient information requirements
+              </h2>
+              <p className="text-[14px] leading-[20px] text-[var(--text-whisper)]">
+                Control what information Zo asks patients for before scheduling an appointment
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 mt-4">
+              <Checkbox size="small" label="First and last name" checked disabled />
+              <Checkbox size="small" label="Phone number" checked disabled />
+              <Checkbox size="small" label="Date of birth" checked disabled />
               <Checkbox
                 size="small"
                 label="Insurance carrier"
@@ -91,7 +99,7 @@ export default function SchedulingOptionsTask() {
               />
               <Checkbox
                 size="small"
-                label="Plan"
+                label="Insurance plan"
                 checked={options.requiredPlan}
                 onCheckedChange={(checked) =>
                   setOptions((prev) => ({ ...prev, requiredPlan: checked === true }))
@@ -99,25 +107,37 @@ export default function SchedulingOptionsTask() {
               />
               <Checkbox
                 size="small"
-                label="Member ID"
+                label="Insurance member ID"
                 checked={options.requiredMemberId}
                 onCheckedChange={(checked) =>
                   setOptions((prev) => ({ ...prev, requiredMemberId: checked === true }))
                 }
               />
+              <Checkbox
+                size="small"
+                label="Address"
+                checked={options.requiredAddress}
+                onCheckedChange={(checked) =>
+                  setOptions((prev) => ({ ...prev, requiredAddress: checked === true }))
+                }
+              />
+              <Checkbox
+                size="small"
+                label="Email address"
+                checked={options.requiredEmail}
+                onCheckedChange={(checked) =>
+                  setOptions((prev) => ({ ...prev, requiredEmail: checked === true }))
+                }
+              />
             </div>
           </section>
 
-          <section className="flex flex-col gap-4">
+          <section className="flex flex-col gap-4 border-t border-[var(--stroke-default)] pt-8">
             <h2 className="text-[18px] leading-[24px] font-semibold text-[var(--text-default)]">
-              When should Zo transfer scheduling calls to staff?
+              Transfer options
             </h2>
-            <p className="text-[14px] leading-[20px] text-[var(--text-secondary)]">
-              When enabled, Zo will transfer these calls to your staff instead of scheduling.
-            </p>
             <div className="flex flex-col gap-4">
               <SwitchField
-                size="small"
                 label="Transfer self-pay patients"
                 description="Calls from patients without insurance will be transferred to staff."
                 checked={options.transferSelfPay}
@@ -126,7 +146,6 @@ export default function SchedulingOptionsTask() {
                 }
               />
               <SwitchField
-                size="small"
                 label="Transfer existing patients requesting to switch providers"
                 description="Calls from existing patients who want to change providers will be transferred to staff."
                 checked={options.transferSwitchProvider}
@@ -137,19 +156,29 @@ export default function SchedulingOptionsTask() {
             </div>
           </section>
 
-          <section className="flex flex-col gap-4">
+          <section className="flex flex-col gap-4 border-t border-[var(--stroke-default)] pt-8">
             <h2 className="text-[18px] leading-[24px] font-semibold text-[var(--text-default)]">
-              Should Zo send SMS confirmations to patients?
+              Patient SMS options
             </h2>
-            <SwitchField
-              size="small"
-              label="Send SMS confirmations"
-              description="Zo can send SMS on behalf of your practice to confirm scheduling actions (e.g. new appointments, reschedules)."
-              checked={options.smsConfirmations}
-              onCheckedChange={(checked) =>
-                setOptions((prev) => ({ ...prev, smsConfirmations: checked === true }))
+            <RadioGroup
+              label="When prompted, should Zo send SMS messages to patients?"
+              value={options.smsConfirmations ? "yes" : "no"}
+              onValueChange={(value) =>
+                setOptions((prev) => ({ ...prev, smsConfirmations: value === "yes" }))
               }
-            />
+              className="flex flex-col gap-2"
+            >
+              <RadioField
+                value="yes"
+                label="Yes"
+                description="Send SMS to patients to confirm scheduling actions (e.g. new appointments, reschedules, cancellations)"
+              />
+              <RadioField
+                value="no"
+                label="No"
+                description="I have an automated SMS system that already does this"
+              />
+            </RadioGroup>
           </section>
         </div>
       </Section>

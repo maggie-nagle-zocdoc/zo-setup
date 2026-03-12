@@ -28,12 +28,16 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
+  Icon,
 } from "@/components/vibezz";
 import { cn } from "@/lib/utils";
 import { ZoSetupBackContext, ZoSetupContinueValidationContext, ZoSetupStateContext, type WorkingHours } from "../zo-setup-shell";
+import { PLACEHOLDER_LOCATION_NAMES } from "../data";
 import { PRACTICE_INFO_STORAGE_KEY } from "./section-1-task-1";
 
 const DEFAULT_PRACTICE_NAME = "Soho Medical";
+
+const PLACEHOLDER_LOCATIONS = PLACEHOLDER_LOCATION_NAMES;
 
 function getPracticeNamesList(): string[] {
   if (typeof window === "undefined") return [DEFAULT_PRACTICE_NAME];
@@ -50,32 +54,10 @@ function getPracticeNamesList(): string[] {
   }
 }
 
-// Placeholder Zocdoc locations (NY & NJ)
-const PLACEHOLDER_LOCATIONS = [
-  "Manhattan – Midtown",
-  "Manhattan – Upper East Side",
-  "Manhattan – SoHo",
-  "Brooklyn – Williamsburg",
-  "Brooklyn – Park Slope",
-  "Queens – Astoria",
-  "Queens – Flushing",
-  "Bronx – Riverdale",
-  "Staten Island – St. George",
-  "Long Island – Great Neck",
-  "Westchester – White Plains",
-  "Jersey City",
-  "Newark",
-  "Hoboken",
-  "Edison",
-  "Woodbridge",
-  "Cherry Hill",
-  "New Brunswick",
-  "Fort Lee",
-  "Paramus",
-];
-
 type PhoneSystemChoice = "one" | "per-location" | "regional" | "";
 type Phase = "select" | "loading" | "result";
+/** For one/per-location loading: show locations step first, then phone lines step */
+type LoadingStep = "locations" | "lines";
 
 const CHOICES: { value: PhoneSystemChoice; label: string; icon: string }[] = [
   { value: "one", label: "I have one phone number that directs all of my calls", icon: "support_agent" },
@@ -83,7 +65,10 @@ const CHOICES: { value: PhoneSystemChoice; label: string; icon: string }[] = [
   { value: "regional", label: "I have multiple regional phone numbers", icon: "auto_awesome_mosaic" },
 ];
 
-const LOADING_DURATION_MS = 2200;
+/** Time to read each of the two loading states (locations, then phone lines) */
+const LOADING_PART1_MS = 2000;
+const LOADING_PART2_MS = 2000;
+const LOADING_TOTAL_MS = LOADING_PART1_MS + LOADING_PART2_MS;
 const PHONE_LINES_STORAGE_KEY = "zo-setup-phone-lines";
 const PHONE_LINES_CHOICE_KEY = "zo-setup-phone-lines-choice";
 
@@ -152,6 +137,7 @@ export default function PhoneLinesTask() {
   const { setContinueValidationHandler } = useContext(ZoSetupContinueValidationContext);
   const [choice, setChoice] = useState<PhoneSystemChoice>("");
   const [phase, setPhase] = useState<Phase>("select");
+  const [loadingStep, setLoadingStep] = useState<LoadingStep>("locations");
   const [customLines, setCustomLines] = useState<PhoneLineRow[]>([]);
   const [continueError, setContinueError] = useState<string | null>(null);
   const [lineNameErrors, setLineNameErrors] = useState<Record<string, string>>({});
@@ -183,6 +169,8 @@ export default function PhoneLinesTask() {
       setLineNameErrors({});
       setLineLocationErrors({});
       setPhase("loading");
+      setLoadingStep("locations");
+      setTimeout(() => setLoadingStep("lines"), LOADING_PART1_MS);
       setTimeout(() => {
         setPhase("result");
         if (v === "one") {
@@ -213,7 +201,7 @@ export default function PhoneLinesTask() {
         } catch {
           // ignore
         }
-      }, LOADING_DURATION_MS);
+      }, LOADING_TOTAL_MS);
     },
     [phase]
   );
@@ -435,24 +423,49 @@ export default function PhoneLinesTask() {
                 phase === "select"
                   ? "How does your practice receive calls?"
                   : phase === "result" && choice === "regional"
-                    ? "Create your Zo phone lines"
-                  : phase === "result"
-                    ? "Review your Zo phone lines"
-                    : "Phone lines"
+                    ? "Create a Zo phone line for each of your regions"
+                  : phase === "result" && choice === "one"
+                    ? "We created a Zo phone line that includes all of your locations"
+                    : phase === "result" && choice === "per-location"
+                      ? "We created a Zo phone line for each of your locations"
+                      : phase === "result"
+                        ? "Review your Zo phone lines"
+                        : "Phone lines"
               }
               subbody={
                 phase === "select"
                   ? "We'll set up Zo phone lines based on your practices phone system"
                   : phase === "result" && choice === "one"
-                    ? "We've created one Zo phone line that includes all of your Zocdoc locations"
+                    ? "Review and update the included locations and hours below"
                     : phase === "result" && choice === "per-location"
-                      ? "We've created a separate Zo phone line for each of your Zocdoc locations"
+                      ? "Review and update the phone lines, locations, and hours below"
                       : phase === "result" && choice === "regional"
-                        ? "Create your own phone lines and assign locations to each"
+                        ? "You'll need to map locations to each phone line and make sure the hours are correct"
                         : "We'll set up Zo phone lines based on how your practice receives calls."
               }
             />
             </>
+          )}
+
+          {phase === "result" && (
+            <div
+              className="mt-6 flex gap-3 items-center rounded-2xl border border-[var(--stroke-default)] bg-[var(--background-brand-yellow-dark)] p-6"
+              role="region"
+              aria-label="What is a Zo phone line?"
+            >
+              <div className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full bg-[var(--color-yellow-10)]">
+                <Icon name="lightbulb" size="40" filled={false} className="text-[var(--icon-default)]" />
+              </div>
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <p className="text-[16px] font-semibold leading-[26px] text-[var(--text-default)]">
+                  What is a Zo phone line?
+                </p>
+                <p className="text-[14px] font-medium leading-[20px] text-[var(--text-default)]">
+                  Each Zo phone line will have its own phone number, routing, and reporting. Locations should be grouped
+                  within the same phone line to match your existing phone structure.
+                </p>
+              </div>
+            </div>
           )}
 
           <div className={phase === "loading" ? "flex-1 flex flex-col min-h-0 mt-8" : "mt-8 flex flex-col gap-8"}>
@@ -478,15 +491,33 @@ export default function PhoneLinesTask() {
             {phase === "loading" && (
               <div className="flex-1 flex flex-col items-center justify-center min-h-0 gap-6 animate-in fade-in duration-200">
                 <div className="flex flex-col items-center gap-3 text-center max-w-md">
-                  <div className="h-10 w-10 rounded-full border-2 border-[var(--stroke-charcoal)] border-t-transparent animate-spin" />
-                  <h2 className="text-[16px] leading-[20px] font-semibold md:text-[18px] md:leading-[24px] text-[var(--text-default)]">
-                    Getting your locations from Zocdoc...
-                  </h2>
-                  <p className="text-[16px] leading-[26px] font-medium text-[var(--text-default)]">
-                    {choice === "one" && "You'll have one phone line for all your locations"}
-                    {choice === "per-location" && "You'll have one phone line per location"}
-                    {choice === "regional" && "Assign locations to phone lines"}
-                  </p>
+                  <div className="relative flex h-[72px] w-[72px] items-center justify-center">
+                    <div className="absolute inset-0 rounded-full border-2 border-[var(--stroke-charcoal)] border-t-transparent animate-spin" />
+                    <Icon
+                      name={loadingStep === "locations" ? "apartment" : "phone"}
+                      size="40"
+                      filled={false}
+                      className="relative z-10 text-[var(--icon-default)]"
+                    />
+                  </div>
+                  {loadingStep === "locations" ? (
+                    <h2 className="text-[16px] leading-[20px] font-semibold md:text-[18px] md:leading-[24px] text-[var(--text-default)]">
+                      Getting your locations from Zocdoc
+                    </h2>
+                  ) : choice === "regional" ? (
+                    <>
+                      <h2 className="text-[16px] leading-[20px] font-semibold md:text-[18px] md:leading-[24px] text-[var(--text-default)]">
+                        Next, we&apos;ll create your Zo phone lines
+                      </h2>
+                      <p className="text-[16px] leading-[26px] font-medium text-[var(--text-default)]">
+                        You&apos;ll map locations to each phone line
+                      </p>
+                    </>
+                  ) : (
+                    <h2 className="text-[16px] leading-[20px] font-semibold md:text-[18px] md:leading-[24px] text-[var(--text-default)]">
+                      {choice === "one" ? "Creating your Zo phone line" : "Creating your Zo phone lines"}
+                    </h2>
+                  )}
                 </div>
               </div>
             )}

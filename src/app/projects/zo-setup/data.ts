@@ -1,0 +1,23 @@
+/** Shared placeholder Zocdoc locations (NY & NJ) used by phone lines and exclusions. */
+export const PLACEHOLDER_LOCATION_NAMES = [
+  "Manhattan – Midtown",
+  "Manhattan – Upper East Side",
+  "Manhattan – SoHo",
+  "Brooklyn – Williamsburg",
+  "Brooklyn – Park Slope",
+  "Queens – Astoria",
+  "Queens – Flushing",
+  "Bronx – Riverdale",
+  "Staten Island – St. George",
+  "Long Island – Great Neck",
+  "Westchester – White Plains",
+  "Jersey City",
+  "Newark",
+  "Hoboken",
+  "Edison",
+  "Woodbridge",
+  "Cherry Hill",
+  "New Brunswick",
+  "Fort Lee",
+  "Paramus",
+];

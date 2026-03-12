@@ -9,25 +9,44 @@ import {
   IconButton,
   RadioGroup,
   RadioCard,
+  FieldLabel,
 } from "@/components/vibezz";
 import { ZoSetupContinueValidationContext } from "../zo-setup-shell";
 
-const EXAMPLE_PRACTICE_NAME = "Soho Medical";
+const DEFAULT_PRACTICE_NAME = "Soho Medical";
 
 export const PRACTICE_INFO_STORAGE_KEY = "zo-setup-practice-info";
 
 interface StoredPracticeInfo {
+  practiceName: string;
   choice: string;
   phonetic: string;
-  showAdditional: boolean;
-  additionalNames: { id: string; name: string; phonetic: string; showPhonetic: boolean }[];
+  additionalNames: { id: string; name: string; phonetic: string }[];
 }
 
 function getStoredPracticeInfo(): StoredPracticeInfo | null {
   if (typeof window === "undefined") return null;
   try {
     const s = sessionStorage.getItem(PRACTICE_INFO_STORAGE_KEY);
-    return s ? (JSON.parse(s) as StoredPracticeInfo) : null;
+    if (!s) return null;
+    const parsed = JSON.parse(s) as Record<string, unknown>;
+    // New format
+    if (typeof parsed.practiceName === "string") {
+      return {
+        practiceName: parsed.practiceName,
+        choice: (parsed.choice as string) ?? "",
+        phonetic: (parsed.phonetic as string) ?? "",
+        additionalNames: Array.isArray(parsed.additionalNames) ? (parsed.additionalNames as { id: string; name: string; phonetic: string }[]) : [],
+      };
+    }
+    // Migrate old format (choice, phonetic, showAdditional, additionalNames with showPhonetic)
+    const old = parsed as { choice?: string; phonetic?: string; additionalNames?: { id: string; name: string; phonetic: string }[] };
+    return {
+      practiceName: DEFAULT_PRACTICE_NAME,
+      choice: old.choice ?? "",
+      phonetic: old.phonetic ?? "",
+      additionalNames: Array.isArray(old.additionalNames) ? old.additionalNames.map((a) => ({ id: a.id, name: a.name, phonetic: a.phonetic ?? "" })) : [],
+    };
   } catch {
     return null;
   }
@@ -43,10 +62,10 @@ function storePracticeInfo(data: StoredPracticeInfo) {
 
 export default function PracticeInformation() {
   const { setContinueValidationHandler } = useContext(ZoSetupContinueValidationContext);
-  const [choice, setChoice] = useState<string>("");
+  const [practiceName, setPracticeName] = useState(DEFAULT_PRACTICE_NAME);
+  const [choice, setChoice] = useState("");
   const [phonetic, setPhonetic] = useState("");
-  const [showAdditional, setShowAdditional] = useState(false);
-  const [additionalNames, setAdditionalNames] = useState<{ id: string; name: string; phonetic: string; showPhonetic: boolean }[]>([]);
+  const [additionalNames, setAdditionalNames] = useState<{ id: string; name: string; phonetic: string }[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playingAdditionalIndex, setPlayingAdditionalIndex] = useState<number | null>(null);
   const [continueError, setContinueError] = useState<string | null>(null);
@@ -56,9 +75,9 @@ export default function PracticeInformation() {
   useEffect(() => {
     const stored = getStoredPracticeInfo();
     if (stored) {
+      setPracticeName(stored.practiceName);
       setChoice(stored.choice);
       setPhonetic(stored.phonetic);
-      setShowAdditional(stored.showAdditional);
       setAdditionalNames(stored.additionalNames);
     }
   }, []);
@@ -72,9 +91,8 @@ export default function PracticeInformation() {
 
   useEffect(() => {
     if (!hasRestoredRef.current) return;
-    const data: StoredPracticeInfo = { choice, phonetic, showAdditional, additionalNames };
-    storePracticeInfo(data);
-  }, [choice, phonetic, showAdditional, additionalNames]);
+    storePracticeInfo({ practiceName, choice, phonetic, additionalNames });
+  }, [practiceName, choice, phonetic, additionalNames]);
 
   const handlePlay = () => {
     setIsPlaying(true);
@@ -87,15 +105,7 @@ export default function PracticeInformation() {
   };
 
   const addPracticeSlot = () => {
-    setAdditionalNames((prev) => [...prev, { id: crypto.randomUUID(), name: "", phonetic: "", showPhonetic: false }]);
-  };
-
-  const setShowPhonetic = (index: number, show: boolean) => {
-    setAdditionalNames((prev) => {
-      const next = [...prev];
-      next[index] = { ...next[index], showPhonetic: show };
-      return next;
-    });
+    setAdditionalNames((prev) => [...prev, { id: crypto.randomUUID(), name: "", phonetic: "" }]);
   };
 
   const removeAdditionalName = (index: number) => {
@@ -124,51 +134,59 @@ export default function PracticeInformation() {
   return (
     <div className="flex-1 flex flex-col">
       <Section size="2">
-          <Header
-            title="Let's get the basics right"
-            subbody="Listen to how Zo pronounces your practice's name and let us know how it sounds."
-          />
+        <Header title="Let's get the basics right" />
 
-          <div className="mt-8 flex flex-col gap-8">
-            {/* Practice name + play (preview container) */}
-            <div className="flex flex-col gap-2">
-              <span className="text-[16px] leading-[26px] font-semibold text-[var(--text-default)]">
-                Preview pronunciation
-              </span>
-              <div className="rounded-xl border border-[var(--stroke-default)] bg-[var(--background-default-greige)] p-5 flex items-center gap-4">
-              <IconButton
-                icon={isPlaying ? "stop" : "play_arrow"}
-                size="small"
-                aria-label={isPlaying ? "Stop" : "Listen to pronunciation"}
-                onClick={handlePlay}
-                className="shrink-0 !rounded-full bg-[var(--color-charcoal-90)] text-[var(--color-white)] hover:bg-[var(--color-charcoal-70)] active:bg-[var(--color-charcoal-70)] focus-visible:ring-[var(--stroke-keyboard)]"
-              />
-              <p className="text-[18px] leading-[28px] font-semibold text-[var(--text-default)]">
-                &ldquo;{EXAMPLE_PRACTICE_NAME}&rdquo;
+        <div className="mt-8 flex flex-col gap-8">
+          {/* Practice name */}
+          <div className="flex flex-col gap-6">
+            <h2 className="text-[16px] leading-[20px] font-semibold text-[var(--text-default)] md:text-[18px] md:leading-[24px]">
+              Practice name
+            </h2>
+            <div className="rounded-2xl border border-[var(--stroke-default)] bg-[var(--background-default-white)] p-8 flex flex-col gap-0">
+              <p className="text-[16px] leading-[26px] font-semibold text-[var(--text-default)]">
+                {practiceName}
               </p>
-            </div>
+              <div className="flex flex-col gap-2">
+                <FieldLabel size="small" required>
+                  Preview pronunciation
+                </FieldLabel>
+                <div className="rounded-full border border-[var(--stroke-default)] bg-[var(--background-default-greige)] px-6 py-4 flex items-center gap-4">
+                  <IconButton
+                    icon={isPlaying ? "stop" : "play_arrow"}
+                    size="small"
+                    aria-label={isPlaying ? "Stop" : "Listen to pronunciation"}
+                    onClick={handlePlay}
+                    className="shrink-0 !rounded-full bg-[var(--color-charcoal-90)] text-[var(--color-white)] hover:bg-[var(--color-charcoal-70)] active:bg-[var(--color-charcoal-70)] focus-visible:ring-[var(--stroke-keyboard)]"
+                  />
+                  <span className="text-[14px] leading-[20px] text-[var(--text-whisper)]">
+                    {isPlaying ? "0:02/0:02" : "0:00/0:02"}
+                  </span>
+                  <div className="flex-1 h-1 rounded-full bg-[var(--stroke-default)] overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-[var(--stroke-charcoal)] transition-all duration-150"
+                      style={{ width: isPlaying ? "100%" : "0%" }}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Choice tiles: does it sound right? */}
-            <RadioGroup
-              value={choice}
-              onValueChange={(value) => {
-                setChoice(value);
-                setContinueError(null);
-              }}
-              label="How does that sound?"
-              className="flex flex-col gap-3 w-full"
-            >
-              <RadioCard value="sounds-good" label="Sounds good" />
-              <RadioCard value="add-phonetic" label="I need to update the pronunciation" />
-            </RadioGroup>
-            {continueError && (
-              <p className="text-[14px] leading-[20px] font-medium text-[var(--text-error)]" role="alert">
-                {continueError}
-              </p>
-            )}
-
-            {/* Phonetic field when that option is chosen */}
+            <div className="flex flex-col gap-3">
+              <FieldLabel size="default" required>
+                Is the pronunciation correct?
+              </FieldLabel>
+              <RadioGroup
+                value={choice}
+                onValueChange={(value) => {
+                  setChoice(value);
+                  setContinueError(null);
+                }}
+                className="flex flex-col gap-2 w-full"
+              >
+                <RadioCard value="sounds-good" label="Yes, this sounds good" />
+                <RadioCard value="add-phonetic" label="No, I need to add pronunciation" />
+              </RadioGroup>
+            </div>
             {choice === "add-phonetic" && (
               <div className="animate-in fade-in duration-200">
                 <TextField
@@ -182,87 +200,85 @@ export default function PracticeInformation() {
                 />
               </div>
             )}
-
-            {/* Optional: add more practice names */}
-            <div className="border-t border-[var(--stroke-default)] pt-6">
-              <h2 className="text-[18px] leading-[24px] font-semibold text-[var(--text-default)] md:text-[20px] md:leading-[28px]">
-                Add another practice name
-                <span className="ml-1 text-[16px] leading-[26px] font-medium text-[var(--text-whisper)]">(Optional)</span>
-              </h2>
-              <p className="mt-2 text-[14px] leading-[20px] text-[var(--text-secondary)]">
-                Only for practices that operate under multiple names. Do not include location names.
+            {continueError && (
+              <p className="text-[14px] leading-[20px] font-medium text-[var(--text-error)]" role="alert">
+                {continueError}
               </p>
-              {!showAdditional && (
-                <Button
-                  variant="secondary"
-                  size="small"
-                  onClick={() => {
-                    setShowAdditional(true);
-                    addPracticeSlot();
-                  }}
-                  className="mt-3 w-fit"
-                >
-                  Add practice name
-                </Button>
-              )}
-              {showAdditional && (
-                <div className="mt-4 flex flex-col gap-6 animate-in fade-in duration-200">
-                  {additionalNames.map((item, index) => (
-                    <div
-                      key={item.id}
-                      className="rounded-xl border border-[var(--stroke-default)] bg-[var(--background-default-white)] p-6 flex items-start gap-3 w-full"
-                    >
-                      <IconButton
-                        icon={playingAdditionalIndex === index ? "stop" : "play_arrow"}
-                        size="small"
-                        aria-label={playingAdditionalIndex === index ? "Stop" : "Listen to pronunciation"}
-                        onClick={() => handlePlayAdditional(index)}
-                        className="shrink-0 !rounded-full bg-[var(--color-charcoal-90)] text-[var(--color-white)] hover:bg-[var(--color-charcoal-70)] active:bg-[var(--color-charcoal-70)] focus-visible:ring-[var(--stroke-keyboard)]"
-                      />
-                      <div className="flex-1 min-w-0 flex flex-col gap-3">
-                        <TextField
-                          label="Practice name"
-                          value={item.name}
-                          onChange={(e) => updateAdditionalName(index, "name", e.target.value)}
-                          size="small"
-                          required
-                        />
-                        {item.showPhonetic ? (
-                          <div className="animate-in fade-in duration-200">
-                            <TextField
-                              label="Phonetic spelling"
-                              value={item.phonetic}
-                              onChange={(e) => updateAdditionalName(index, "phonetic", e.target.value)}
-                              size="small"
-                            />
-                          </div>
-                        ) : (
-                          <Button
-                            variant="tertiary"
-                            size="small"
-                            onClick={() => setShowPhonetic(index, true)}
-                            className="w-fit"
-                          >
-                            Add pronunciation
-                          </Button>
-                        )}
-                      </div>
-                      <IconButton
-                        icon="delete"
-                        size="small"
-                        aria-label="Remove practice name"
-                        onClick={() => removeAdditionalName(index)}
-                        className="shrink-0 mt-8"
-                      />
-                    </div>
-                  ))}
-                  <Button variant="secondary" size="small" onClick={addPracticeSlot} className="w-fit">
-                    Add practice name
-                  </Button>
-                </div>
-              )}
-            </div>
+            )}
           </div>
+
+          {/* Divider */}
+          <div className="border-t border-[var(--stroke-default)]" />
+
+          {/* Additional practice names */}
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-1">
+              <h2 className="text-[16px] leading-[20px] font-semibold text-[var(--text-default)] md:text-[18px] md:leading-[24px]">
+                Additional practice names
+              </h2>
+              <p className="text-[14px] leading-[20px] text-[var(--text-secondary)]">
+                This option is for practices that operate under multiple names. Do not include location names.
+              </p>
+            </div>
+
+            {additionalNames.length > 0 && (
+              <div className="flex flex-col gap-4">
+                {additionalNames.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className="rounded-2xl border border-[var(--stroke-default)] bg-[var(--background-default-white)] p-8 flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-4"
+                  >
+                    <div className="flex-1 min-w-0 flex flex-col gap-4">
+                      <TextField
+                        label="Practice name"
+                        value={item.name}
+                        onChange={(e) => updateAdditionalName(index, "name", e.target.value)}
+                        size="small"
+                        placeholder="Practice name"
+                        required
+                      />
+                      <TextField
+                        label="Phonetic spelling"
+                        value={item.phonetic}
+                        onChange={(e) => updateAdditionalName(index, "phonetic", e.target.value)}
+                        size="small"
+                        placeholder="e.g. SO-ho MED-i-cal"
+                      />
+                      <div className="flex flex-col gap-2">
+                        <FieldLabel size="small" required>
+                          Preview pronunciation
+                        </FieldLabel>
+                        <div className="rounded-full border border-[var(--stroke-default)] bg-[var(--background-default-greige)] px-4 py-3 flex items-center gap-3">
+                          <IconButton
+                            icon={playingAdditionalIndex === index ? "stop" : "play_arrow"}
+                            size="small"
+                            aria-label={playingAdditionalIndex === index ? "Stop" : "Listen to pronunciation"}
+                            onClick={() => handlePlayAdditional(index)}
+                            className="shrink-0 !rounded-full bg-[var(--color-charcoal-90)] text-[var(--color-white)] hover:bg-[var(--color-charcoal-70)] active:bg-[var(--color-charcoal-70)] focus-visible:ring-[var(--stroke-keyboard)]"
+                          />
+                          <span className="text-[14px] leading-[20px] text-[var(--text-whisper)]">
+                            {playingAdditionalIndex === index ? "0:02/0:02" : "0:00/0:02"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <IconButton
+                      icon="delete"
+                      size="small"
+                      aria-label="Remove practice name"
+                      onClick={() => removeAdditionalName(index)}
+                      className="shrink-0 mt-8"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <Button variant="secondary" size="small" onClick={addPracticeSlot} className="w-fit">
+              Add another name
+            </Button>
+          </div>
+        </div>
       </Section>
     </div>
   );

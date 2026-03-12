@@ -1,15 +1,15 @@
 "use client";
 
 const SECTIONS = [
-  "Set up your phone lines",
+  "Set up your Zo phone lines",
   "Configure your scheduling preferences",
-  "Fine tune your practice's voice",
+  "Fine tune your in-call experience",
 ];
 
 export default function ZoSetupIntro() {
   return (
     <div className="flex flex-1 min-h-0 w-full flex-col justify-center">
-      <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-[72px]">
+      <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-[40px]">
         {/* Left: image placeholder — fills column */}
         <div className="flex min-h-0 w-full items-center">
           <div
@@ -18,7 +18,7 @@ export default function ZoSetupIntro() {
           />
         </div>
         {/* Right: What to expect — fills column */}
-        <div className="flex min-h-0 w-full flex-col justify-center px-4 py-6 sm:px-0 sm:pl-8 sm:py-8">
+        <div className="flex min-h-0 w-full flex-col justify-center px-4 py-6 sm:px-0 sm:pl-0 sm:py-8">
           <h2 className="text-[20px] leading-[26px] font-semibold text-[var(--text-default)] md:text-[24px] md:leading-[32px]">
             What to expect
           </h2>
