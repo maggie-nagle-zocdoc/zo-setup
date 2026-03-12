@@ -105,12 +105,14 @@ interface RadioGroupProps
   hasError?: boolean
   /** Error message displayed below the group */
   errorMessage?: string
+  /** Optional className for the radio group root (layout container) */
+  rootClassName?: string
 }
 
 const RadioGroup = React.forwardRef<
   React.ElementRef<typeof RadioGroupPrimitive.Root>,
   RadioGroupProps
->(({ className, label, hasError, errorMessage, disabled, children, ...props }, ref) => {
+>(({ className, label, hasError, errorMessage, disabled, rootClassName, children, ...props }, ref) => {
   return (
     <RadioGroupContext.Provider value={{ hasError, disabled }}>
       <FieldWrapper className={className}>
@@ -120,7 +122,7 @@ const RadioGroup = React.forwardRef<
           </span>
         )}
         <RadioGroupPrimitive.Root
-          className={cn("grid gap-4")}
+          className={cn("grid gap-4", rootClassName)}
           disabled={disabled}
           {...props}
           ref={ref}

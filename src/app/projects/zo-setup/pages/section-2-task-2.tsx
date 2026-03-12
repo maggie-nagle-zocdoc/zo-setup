@@ -86,9 +86,9 @@ export default function SchedulingOptionsTask() {
               </p>
             </div>
             <div className="flex flex-col gap-3 mt-4">
-              <Checkbox size="small" label="First and last name" checked disabled />
-              <Checkbox size="small" label="Phone number" checked disabled />
-              <Checkbox size="small" label="Date of birth" checked disabled />
+              <Checkbox size="small" label="First and last name (Default)" checked disabled />
+              <Checkbox size="small" label="Phone number (Default)" checked disabled />
+              <Checkbox size="small" label="Date of birth (Default)" checked disabled />
               <Checkbox
                 size="small"
                 label="Insurance carrier"
@@ -158,10 +158,10 @@ export default function SchedulingOptionsTask() {
 
           <section className="flex flex-col gap-4 border-t border-[var(--stroke-default)] pt-8">
             <h2 className="text-[18px] leading-[24px] font-semibold text-[var(--text-default)]">
-              Patient SMS options
+              SMS preferences
             </h2>
             <RadioGroup
-              label="When prompted, should Zo send SMS messages to patients?"
+              label="Should Zo send confirmation text messages to patients?"
               value={options.smsConfirmations ? "yes" : "no"}
               onValueChange={(value) =>
                 setOptions((prev) => ({ ...prev, smsConfirmations: value === "yes" }))

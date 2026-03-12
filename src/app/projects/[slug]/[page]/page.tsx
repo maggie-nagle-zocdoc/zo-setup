@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import NextLink from "next/link";
-import { IconButton } from "@/components/vibezz";
+import { IconButton, Logo, Button } from "@/components/vibezz";
 import { ZoSetupShell } from "../../zo-setup/zo-setup-shell";
 import { projects } from "../../registry";
 
@@ -44,6 +44,37 @@ export default async function DynamicPage({ params }: Props) {
   );
 
   const isZoSetup = slug === "zo-setup" && project.sections?.length;
+  const isZoSetupComplete = slug === "zo-setup" && page === "complete";
+
+  if (isZoSetupComplete) {
+    return (
+      <div className="h-screen flex flex-col bg-[var(--background-default-white)]">
+        <header className="flex shrink-0 h-[80px] items-center justify-between border-b border-[var(--stroke-default)] bg-[var(--background-default-white)] px-6">
+          <NextLink href="/" aria-label="Zocdoc home" className="shrink-0">
+            <Logo size="small" />
+          </NextLink>
+          <NextLink href="/">
+            <Button variant="ghost" size="small">
+              Save and exit
+            </Button>
+          </NextLink>
+        </header>
+        <main className="flex-1 min-h-0 overflow-auto">
+          <div className="flex flex-col w-full mx-auto px-6 max-w-[800px] min-h-full py-12">
+            <Suspense
+              fallback={
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="h-64 w-full max-w-2xl rounded bg-[var(--background-disabled)] animate-pulse" />
+                </div>
+              }
+            >
+              <PageComponent />
+            </Suspense>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   if (isZoSetup) {
     const orderedPageSlugs = getOrderedPageSlugs(project);

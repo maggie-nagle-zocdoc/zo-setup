@@ -17,6 +17,9 @@ const INTRO_COMPLETE_STORAGE_KEY = "zo-setup-intro-complete";
 /** SessionStorage keys used by the Zo setup flow (for reset) */
 const SCHEDULING_EXCLUSIONS_STORAGE_KEY = "zo-setup-scheduling-exclusions";
 const SCHEDULING_OPTIONS_STORAGE_KEY = "zo-setup-scheduling-options";
+const VOICE_STORAGE_KEY = "zo-setup-voice";
+const PRE_CALL_STORAGE_KEY = "zo-setup-pre-call";
+const TEST_CALL_NUMBERS_STORAGE_KEY = "zo-setup-test-call-numbers";
 
 const ZO_SETUP_STORAGE_KEYS = [
   PHONE_LINES_STORAGE_KEY,
@@ -26,6 +29,9 @@ const ZO_SETUP_STORAGE_KEYS = [
   INTRO_COMPLETE_STORAGE_KEY,
   SCHEDULING_EXCLUSIONS_STORAGE_KEY,
   SCHEDULING_OPTIONS_STORAGE_KEY,
+  VOICE_STORAGE_KEY,
+  PRE_CALL_STORAGE_KEY,
+  TEST_CALL_NUMBERS_STORAGE_KEY,
 ];
 
 /** One day's hours: start/end as "HH:mm" (24h), or null for closed. Index 0 = Monday, 6 = Sunday. */
@@ -136,8 +142,9 @@ export function ZoSetupShell({
       const slug = orderedPageSlugs[i];
       if (!isPageDisabled(slug)) return slug;
     }
+    if (currentPageSlug === "section-3-task-5") return "complete";
     return null;
-  }, [currentIndex, totalSteps, orderedPageSlugs, isPageDisabled]);
+  }, [currentIndex, totalSteps, orderedPageSlugs, isPageDisabled, currentPageSlug]);
 
   const isWelcomeStep = currentPageSlug === "intro";
 
@@ -213,13 +220,19 @@ export function ZoSetupShell({
       if (exclusionsRaw) {
         try {
           const arr = JSON.parse(exclusionsRaw);
-          if (Array.isArray(arr) && arr.length > 0) next.add("section-2-task-1");
+          if (Array.isArray(arr)) next.add("section-2-task-1");
         } catch {
           // ignore
         }
       }
       if (sessionStorage.getItem(SCHEDULING_OPTIONS_STORAGE_KEY)) {
         next.add("section-2-task-2");
+      }
+      if (sessionStorage.getItem(VOICE_STORAGE_KEY)) {
+        next.add("section-3-task-1");
+      }
+      if (sessionStorage.getItem(PRE_CALL_STORAGE_KEY)) {
+        next.add("section-3-task-2");
       }
     } catch {
       // ignore
@@ -383,7 +396,9 @@ export function ZoSetupShell({
             <div
               className={cn(
                 "flex flex-col w-full mx-auto px-6",
-                isWelcomeStep || currentPageSlug === "section-1-task-3"
+                isWelcomeStep ||
+                currentPageSlug === "section-1-task-3" ||
+                currentPageSlug === "section-2-task-1"
                   ? "max-w-[800px] min-h-full"
                   : "max-w-[648px] min-h-full"
               )}
@@ -414,7 +429,7 @@ export function ZoSetupShell({
                 ))}
             </div>
             <div className="flex items-center gap-4">
-              {nextSlug && !isWelcomeStep && (
+              {nextSlug && !isWelcomeStep && currentPageSlug !== "section-3-task-5" && (
                 <NextLink href={`${flowBasePath}/${nextSlug}`}>
                   <Button variant="ghost" size="default">
                     Skip for now
@@ -430,6 +445,12 @@ export function ZoSetupShell({
                   <Button variant="primary" size="default" onClick={handleGetStarted}>
                     Get started
                   </Button>
+                ) : currentPageSlug === "section-3-task-5" ? (
+                  <NextLink href={`${flowBasePath}/complete`}>
+                    <Button variant="primary" size="default">
+                      Submit
+                    </Button>
+                  </NextLink>
                 ) : (
                   <Button variant="primary" size="default" onClick={handleContinueToNext}>
                     Continue

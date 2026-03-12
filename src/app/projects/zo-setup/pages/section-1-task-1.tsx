@@ -15,6 +15,13 @@ import { ZoSetupContinueValidationContext } from "../zo-setup-shell";
 
 const DEFAULT_PRACTICE_NAME = "Soho Medical";
 
+const PRONUNCIATION_DURATION_MS = 2000;
+
+function formatTime(ms: number): string {
+  const seconds = Math.floor(ms / 1000);
+  return `0:${seconds.toString().padStart(2, "0")}`;
+}
+
 export const PRACTICE_INFO_STORAGE_KEY = "zo-setup-practice-info";
 
 interface StoredPracticeInfo {
@@ -67,10 +74,13 @@ export default function PracticeInformation() {
   const [phonetic, setPhonetic] = useState("");
   const [additionalNames, setAdditionalNames] = useState<{ id: string; name: string; phonetic: string }[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [elapsedMs, setElapsedMs] = useState(0);
   const [playingAdditionalIndex, setPlayingAdditionalIndex] = useState<number | null>(null);
+  const [additionalElapsedMs, setAdditionalElapsedMs] = useState(0);
   const [continueError, setContinueError] = useState<string | null>(null);
 
   const hasRestoredRef = useRef(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     const stored = getStoredPracticeInfo();
@@ -94,14 +104,64 @@ export default function PracticeInformation() {
     storePracticeInfo({ practiceName, choice, phonetic, additionalNames });
   }, [practiceName, choice, phonetic, additionalNames]);
 
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
   const handlePlay = () => {
+    if (isPlaying) {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = null;
+      setIsPlaying(false);
+      setElapsedMs(0);
+      return;
+    }
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setPlayingAdditionalIndex(null);
+    setAdditionalElapsedMs(0);
     setIsPlaying(true);
-    setTimeout(() => setIsPlaying(false), 1500);
+    setElapsedMs(0);
+    intervalRef.current = setInterval(() => {
+      setElapsedMs((prev) => {
+        const next = prev + 100;
+        if (next >= PRONUNCIATION_DURATION_MS) {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          intervalRef.current = null;
+          setIsPlaying(false);
+          return PRONUNCIATION_DURATION_MS;
+        }
+        return next;
+      });
+    }, 100);
   };
 
   const handlePlayAdditional = (index: number) => {
+    if (playingAdditionalIndex === index) {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = null;
+      setPlayingAdditionalIndex(null);
+      setAdditionalElapsedMs(0);
+      return;
+    }
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setIsPlaying(false);
+    setElapsedMs(0);
     setPlayingAdditionalIndex(index);
-    setTimeout(() => setPlayingAdditionalIndex(null), 1500);
+    setAdditionalElapsedMs(0);
+    intervalRef.current = setInterval(() => {
+      setAdditionalElapsedMs((prev) => {
+        const next = prev + 100;
+        if (next >= PRONUNCIATION_DURATION_MS) {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          intervalRef.current = null;
+          setPlayingAdditionalIndex(null);
+          return PRONUNCIATION_DURATION_MS;
+        }
+        return next;
+      });
+    }, 100);
   };
 
   const addPracticeSlot = () => {
@@ -147,7 +207,7 @@ export default function PracticeInformation() {
                 {practiceName}
               </p>
               <div className="flex flex-col gap-2">
-                <FieldLabel size="small" required>
+                <FieldLabel size="small" required className="font-medium">
                   Preview pronunciation
                 </FieldLabel>
                 <div className="rounded-full border border-[var(--stroke-default)] bg-[var(--background-default-greige)] px-6 py-4 flex items-center gap-4">
@@ -159,12 +219,12 @@ export default function PracticeInformation() {
                     className="shrink-0 !rounded-full bg-[var(--color-charcoal-90)] text-[var(--color-white)] hover:bg-[var(--color-charcoal-70)] active:bg-[var(--color-charcoal-70)] focus-visible:ring-[var(--stroke-keyboard)]"
                   />
                   <span className="text-[14px] leading-[20px] text-[var(--text-whisper)]">
-                    {isPlaying ? "0:02/0:02" : "0:00/0:02"}
+                    {formatTime(elapsedMs)}/{formatTime(PRONUNCIATION_DURATION_MS)}
                   </span>
                   <div className="flex-1 h-1 rounded-full bg-[var(--stroke-default)] overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-[var(--stroke-charcoal)] transition-all duration-150"
-                      style={{ width: isPlaying ? "100%" : "0%" }}
+                      className="h-full rounded-full bg-[var(--stroke-charcoal)] transition-all duration-100"
+                      style={{ width: `${(elapsedMs / PRONUNCIATION_DURATION_MS) * 100}%` }}
                     />
                   </div>
                 </div>
@@ -245,7 +305,7 @@ export default function PracticeInformation() {
                         placeholder="e.g. SO-ho MED-i-cal"
                       />
                       <div className="flex flex-col gap-2">
-                        <FieldLabel size="small" required>
+                        <FieldLabel size="small" required className="font-medium">
                           Preview pronunciation
                         </FieldLabel>
                         <div className="rounded-full border border-[var(--stroke-default)] bg-[var(--background-default-greige)] px-4 py-3 flex items-center gap-3">
@@ -257,8 +317,21 @@ export default function PracticeInformation() {
                             className="shrink-0 !rounded-full bg-[var(--color-charcoal-90)] text-[var(--color-white)] hover:bg-[var(--color-charcoal-70)] active:bg-[var(--color-charcoal-70)] focus-visible:ring-[var(--stroke-keyboard)]"
                           />
                           <span className="text-[14px] leading-[20px] text-[var(--text-whisper)]">
-                            {playingAdditionalIndex === index ? "0:02/0:02" : "0:00/0:02"}
+                            {playingAdditionalIndex === index
+                              ? `${formatTime(additionalElapsedMs)}/${formatTime(PRONUNCIATION_DURATION_MS)}`
+                              : `0:00/${formatTime(PRONUNCIATION_DURATION_MS)}`}
                           </span>
+                          <div className="flex-1 h-1 rounded-full bg-[var(--stroke-default)] overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-[var(--stroke-charcoal)] transition-all duration-100"
+                              style={{
+                                width:
+                                  playingAdditionalIndex === index
+                                    ? `${(additionalElapsedMs / PRONUNCIATION_DURATION_MS) * 100}%`
+                                    : "0%",
+                              }}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
