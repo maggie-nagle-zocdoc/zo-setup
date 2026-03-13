@@ -4,19 +4,19 @@ import Image from "next/image";
 
 const STEPS = [
   {
-    icon: "/Zo_Smart Routing.svg",
+    icon: "/Zo-Smart-Routing.svg",
     title: "Set up your Zo phone lines",
     description:
       "Tell us how your phones work today and map locations and transfer numbers to each line",
   },
   {
-    icon: "/Zo_Scheduling Rules.svg",
+    icon: "/Zo-Scheduling-Rules.svg",
     title: "Tell us your scheduling preferences",
     description:
       "Set up scheduling requirements and tell Zo what appointments to schedule vs. not schedule",
   },
   {
-    icon: "/Zo_Multilingual Support.svg",
+    icon: "/Zo-Multilingual-Support.svg",
     title: "Fine tune your in-call experience",
     description:
       "Pick the voice of Zo, setup messages, and give pronunciation guidance",
