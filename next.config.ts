@@ -6,6 +6,9 @@ const basePath = isGitHubPages ? "/zo-setup" : "";
 const nextConfig: NextConfig = {
   basePath: basePath || undefined,
   assetPrefix: basePath ? `${basePath}/` : undefined,
+  env: {
+    NEXT_PUBLIC_BASE_PATH: basePath || "",
+  },
   // Only use static export for GitHub Pages
   ...(isGitHubPages && {
     output: "export",

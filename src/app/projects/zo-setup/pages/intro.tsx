@@ -2,21 +2,23 @@
 
 import Image from "next/image";
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 const STEPS = [
   {
-    icon: "/Zo-Smart-Routing.svg",
+    icon: "/zo-setup/Zo-Smart-Routing.svg",
     title: "Set up your Zo phone lines",
     description:
       "Tell us how your phones work today and map locations and transfer numbers to each line",
   },
   {
-    icon: "/Zo-Scheduling-Rules.svg",
+    icon: "/zo-setup/Zo-Scheduling-Rules.svg",
     title: "Tell us your scheduling preferences",
     description:
       "Set up scheduling requirements and tell Zo what appointments to schedule vs. not schedule",
   },
   {
-    icon: "/Zo-Multilingual-Support.svg",
+    icon: "/zo-setup/Zo-Multilingual-Support.svg",
     title: "Fine tune your in-call experience",
     description:
       "Pick the voice of Zo, setup messages, and give pronunciation guidance",
@@ -37,7 +39,7 @@ export default function ZoSetupIntro() {
           >
             <div className="size-[100px] shrink-0 flex items-center justify-center overflow-hidden rounded-lg">
               <Image
-                src={step.icon}
+                src={`${basePath}${step.icon}`}
                 alt=""
                 width={100}
                 height={100}
