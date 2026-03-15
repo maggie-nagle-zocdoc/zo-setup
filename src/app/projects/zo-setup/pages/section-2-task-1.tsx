@@ -19,7 +19,7 @@ import {
   RadioGroup,
   RadioField,
 } from "@/components/vibezz";
-import { ZoSetupStateContext } from "../zo-setup-shell";
+import { ZoSetupStateContext, ZoSetupContinueValidationContext } from "../zo-setup-shell";
 import type { ZoPhoneLine } from "../zo-setup-shell";
 import { PLACEHOLDER_LOCATION_NAMES } from "../data";
 import { cn } from "@/lib/utils";
@@ -175,8 +175,11 @@ function getExclusionApplyToLabel(
   return ids.map((id) => lines.find((l) => l.id === id)?.name ?? "Phone line").join(", ");
 }
 
+const EXCLUSIONS_VISITED_STORAGE_KEY = "zo-setup-exclusions-visited";
+
 export default function SchedulingExclusionsTask() {
   const { phoneLines } = useContext(ZoSetupStateContext);
+  const { setContinueValidationHandler } = useContext(ZoSetupContinueValidationContext);
   const lines = phoneLines.length > 0 ? phoneLines : [];
 
   const [exclusions, setExclusions] = useState<SchedulingExclusion[]>([]);
@@ -185,13 +188,32 @@ export default function SchedulingExclusionsTask() {
   useEffect(() => {
     const stored = getStoredExclusions();
     if (stored.length > 0) setExclusions(stored);
-    hasRestoredRef.current = true;
+  }, []);
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      hasRestoredRef.current = true;
+    }, 0);
+    return () => clearTimeout(id);
   }, []);
 
   useEffect(() => {
     if (!hasRestoredRef.current) return;
     storeExclusions(exclusions);
   }, [exclusions]);
+
+  useEffect(() => {
+    const onContinue = () => {
+      try {
+        sessionStorage.setItem(EXCLUSIONS_VISITED_STORAGE_KEY, "true");
+      } catch {
+        // ignore
+      }
+      return true;
+    };
+    setContinueValidationHandler(onContinue);
+    return () => setContinueValidationHandler(null);
+  }, [setContinueValidationHandler]);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [flyoutType, setFlyoutType] = useState<ExclusionType | null>(null);

@@ -19,7 +19,7 @@ import {
   DrawerFooter,
   DrawerTitle,
 } from "@/components/vibezz";
-import { ZoSetupStateContext } from "../zo-setup-shell";
+import { ZoSetupStateContext, ZoSetupContinueValidationContext } from "../zo-setup-shell";
 import type { ZoPhoneLine } from "../zo-setup-shell";
 import { cn } from "@/lib/utils";
 
@@ -113,6 +113,7 @@ function storePreCall(data: PreCallState) {
 
 export default function PreCallMessagesTask() {
   const { phoneLines } = useContext(ZoSetupStateContext);
+  const { setContinueValidationHandler } = useContext(ZoSetupContinueValidationContext);
   const [state, setState] = useState<PreCallState>(() => buildDefaultState([]));
   const hasRestoredRef = useRef(false);
 
@@ -136,6 +137,15 @@ export default function PreCallMessagesTask() {
     if (!hasRestoredRef.current || lines.length === 0) return;
     storePreCall(state);
   }, [state, lines.length]);
+
+  useEffect(() => {
+    const onContinue = () => {
+      storePreCall(state);
+      return true;
+    };
+    setContinueValidationHandler(onContinue);
+    return () => setContinueValidationHandler(null);
+  }, [state, setContinueValidationHandler]);
 
   const setMessageEnabled = (id: PreCallMessageId, enabled: boolean) => {
     setState((prev) => ({

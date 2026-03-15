@@ -6,28 +6,30 @@ import { Section, Header, Icon, Button } from "@/components/vibezz";
 import { ZoSetupStateContext } from "../zo-setup-shell";
 import { PRACTICE_INFO_STORAGE_KEY } from "./section-1-task-1";
 import { TRANSFER_NUMBERS_STORAGE_KEY } from "./section-1-task-3";
-import { SCHEDULING_EXCLUSIONS_STORAGE_KEY } from "./section-2-task-1";
-import { SCHEDULING_OPTIONS_STORAGE_KEY } from "./section-2-task-2";
 import { VOICE_STORAGE_KEY } from "./section-3-task-1";
 import { PRE_CALL_STORAGE_KEY } from "./section-3-task-2";
 import { cn } from "@/lib/utils";
 
 const FLOW_BASE = "/projects/zo-setup";
 
-const ORDERED_STEPS: { slug: string; name: string }[] = [
+const ORDERED_STEPS: { slug: string; name: string; optional?: boolean }[] = [
   { slug: "section-1-task-1", name: "Practice information" },
   { slug: "section-1-task-2", name: "Phone lines" },
   { slug: "section-1-task-3", name: "Transfer numbers" },
   { slug: "section-2-task-2", name: "Scheduling options" },
-  { slug: "section-2-task-1", name: "Exclusions" },
+  { slug: "section-2-task-1", name: "Exclusions", optional: true },
   { slug: "section-3-task-1", name: "Voice of Zo" },
   { slug: "section-3-task-2", name: "Pre-call messages" },
-  { slug: "section-3-task-3", name: "Pronunciation" },
-  { slug: "section-3-task-4", name: "FAQs" },
+  { slug: "section-3-task-3", name: "Pronunciation", optional: true },
+  { slug: "section-3-task-4", name: "FAQs", optional: true },
 ];
 
 const INTRO_COMPLETE_STORAGE_KEY = "zo-setup-intro-complete";
 const PHONE_LINES_STORAGE_KEY = "zo-setup-phone-lines";
+const PRONUNCIATION_VISITED_STORAGE_KEY = "zo-setup-pronunciation-visited";
+const FAQS_VISITED_STORAGE_KEY = "zo-setup-faqs-visited";
+const EXCLUSIONS_VISITED_STORAGE_KEY = "zo-setup-exclusions-visited";
+const SCHEDULING_OPTIONS_VISITED_STORAGE_KEY = "zo-setup-scheduling-options-visited";
 
 function getCompletedSlugs(phoneLines: { id: string }[]): Set<string> {
   const next = new Set<string>();
@@ -50,18 +52,12 @@ function getCompletedSlugs(phoneLines: { id: string }[]): Set<string> {
       );
       if (allHaveCatchAll) next.add("section-1-task-3");
     }
-    const exclusionsRaw = sessionStorage.getItem(SCHEDULING_EXCLUSIONS_STORAGE_KEY);
-    if (exclusionsRaw) {
-      try {
-        const arr = JSON.parse(exclusionsRaw);
-        if (Array.isArray(arr)) next.add("section-2-task-1");
-      } catch {
-        // ignore
-      }
-    }
-    if (sessionStorage.getItem(SCHEDULING_OPTIONS_STORAGE_KEY)) next.add("section-2-task-2");
+    if (sessionStorage.getItem(EXCLUSIONS_VISITED_STORAGE_KEY) === "true") next.add("section-2-task-1");
+    if (sessionStorage.getItem(SCHEDULING_OPTIONS_VISITED_STORAGE_KEY) === "true") next.add("section-2-task-2");
     if (sessionStorage.getItem(VOICE_STORAGE_KEY)) next.add("section-3-task-1");
     if (sessionStorage.getItem(PRE_CALL_STORAGE_KEY)) next.add("section-3-task-2");
+    if (sessionStorage.getItem(PRONUNCIATION_VISITED_STORAGE_KEY) === "true") next.add("section-3-task-3");
+    if (sessionStorage.getItem(FAQS_VISITED_STORAGE_KEY) === "true") next.add("section-3-task-4");
   } catch {
     // ignore
   }
@@ -103,13 +99,18 @@ export default function ReviewAndSubmitPage() {
                       )}
                     >
                       {isComplete ? (
-                        <Icon name="check_circle" size="20" className="shrink-0 text-[var(--icon-positive)]" />
+                        <Icon name="check_circle" size="24" filled className="shrink-0 text-[var(--icon-success)]" />
                       ) : (
                         <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-[var(--stroke-charcoal)] text-[12px] font-semibold text-[var(--text-default)]">
                           !
                         </span>
                       )}
-                      <span className="text-[14px] leading-[20px] font-medium min-w-0 flex-1">{step.name}</span>
+                      <span className="text-[16px] leading-[26px] font-semibold min-w-0 flex-1">
+                        {step.name}
+                        {step.optional && (
+                          <span className="text-[var(--text-whisper)] font-normal"> (Optional)</span>
+                        )}
+                      </span>
                       <div className="shrink-0">
                         <NextLink href={`${FLOW_BASE}/${step.slug}`}>
                           {isComplete ? (

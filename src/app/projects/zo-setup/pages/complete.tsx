@@ -8,6 +8,7 @@ import {
   Button,
   TextField,
   IconButton,
+  Icon,
   FieldLabel,
   Drawer,
   DrawerContent,
@@ -97,11 +98,11 @@ export default function CompletePage() {
         <div className="rounded-2xl border border-[var(--stroke-default)] bg-[var(--background-default-white)] p-8 flex flex-col gap-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
             <Header
-              title="Your Zo experience is in the works!"
+              title="We're processing your Zo experience"
               subbody="This typically takes 1–3 business days. Zocdoc will validate your configurations and reach out if we need more information"
             />
             <NextLink href="/projects/zo-setup/section-3-task-5" className="shrink-0">
-              <Button variant="secondary" size="default">
+              <Button variant="secondary" size="small">
                 Edit setup
               </Button>
             </NextLink>
@@ -113,12 +114,36 @@ export default function CompletePage() {
           <h2 className="text-[18px] leading-[24px] font-semibold text-[var(--text-default)] md:text-[20px] md:leading-[28px]">
             What happens next
           </h2>
-          <ol className="list-decimal list-inside flex flex-col gap-3 text-[16px] leading-[26px] text-[var(--text-default)]">
-            <li>Zocdoc will create Zo phone numbers for each of your phone lines</li>
-            <li>Test the Zo call experience</li>
-            <li>Route patient calls to the new Zo phone number to enable the new experience</li>
-            <li>Monitor your Zo dashboard to view call performance and outcomes</li>
-          </ol>
+          <ul className="flex flex-col gap-3 text-[16px] leading-[26px] text-[var(--text-default)]">
+            <li className="rounded-xl border border-[var(--stroke-default)] bg-[var(--background-default-greige)] p-4 flex items-start gap-3">
+              <Icon name="settings" size="24" className="text-[var(--icon-default)] shrink-0 mt-0.5" />
+              <div className="flex flex-col gap-0.5 min-w-0">
+                <span className="font-semibold">Zo phone numbers are created</span>
+                <span>Zocdoc will create Zo phone numbers for each of your phone lines</span>
+              </div>
+            </li>
+            <li className="rounded-xl border border-[var(--stroke-default)] bg-[var(--background-default-greige)] p-4 flex items-start gap-3">
+              <Icon name="phone_in_talk" size="24" className="text-[var(--icon-default)] shrink-0 mt-0.5" />
+              <div className="flex flex-col gap-0.5 min-w-0">
+                <span className="font-semibold">You&apos;ll test the experience</span>
+                <span>Test the Zo call experience</span>
+              </div>
+            </li>
+            <li className="rounded-xl border border-[var(--stroke-default)] bg-[var(--background-default-greige)] p-4 flex items-start gap-3">
+              <Icon name="swap_calls" size="24" className="text-[var(--icon-default)] shrink-0 mt-0.5" />
+              <div className="flex flex-col gap-0.5 min-w-0">
+                <span className="font-semibold">Start routing patient calls</span>
+                <span>Route patient calls to the new Zo phone number to enable the new experience</span>
+              </div>
+            </li>
+            <li className="rounded-xl border border-[var(--stroke-default)] bg-[var(--background-default-greige)] p-4 flex items-start gap-3">
+              <Icon name="analytics" size="24" className="text-[var(--icon-default)] shrink-0 mt-0.5" />
+              <div className="flex flex-col gap-0.5 min-w-0">
+                <span className="font-semibold">Monitor Zo&apos;s performance</span>
+                <span>Monitor your Zo dashboard to view call performance and outcomes</span>
+              </div>
+            </li>
+          </ul>
         </div>
 
         {/* Test call numbers */}
@@ -132,7 +157,7 @@ export default function CompletePage() {
                 Phone numbers that can be used to test call Zo without scheduling real appointments.
               </p>
             </div>
-            <Button variant="secondary" size="default" onClick={openDrawer} className="shrink-0">
+            <Button variant="secondary" size="small" onClick={openDrawer} className="shrink-0">
               Edit
             </Button>
           </div>

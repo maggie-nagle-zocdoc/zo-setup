@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useContext } from "react";
 import {
   Section,
   Header,
@@ -9,8 +9,10 @@ import {
   RadioGroup,
   RadioField,
 } from "@/components/vibezz";
+import { ZoSetupContinueValidationContext } from "../zo-setup-shell";
 
 export const SCHEDULING_OPTIONS_STORAGE_KEY = "zo-setup-scheduling-options";
+const SCHEDULING_OPTIONS_VISITED_STORAGE_KEY = "zo-setup-scheduling-options-visited";
 
 export interface SchedulingOptionsState {
   requiredInsuranceCarrier: boolean;
@@ -55,6 +57,7 @@ function storeOptions(data: SchedulingOptionsState) {
 }
 
 export default function SchedulingOptionsTask() {
+  const { setContinueValidationHandler } = useContext(ZoSetupContinueValidationContext);
   // Use stable default for initial render so server and client match (avoids hydration mismatch from sessionStorage)
   const [options, setOptions] = useState<SchedulingOptionsState>(DEFAULT_OPTIONS);
   const hasRestoredRef = useRef(false);
@@ -62,13 +65,33 @@ export default function SchedulingOptionsTask() {
   useEffect(() => {
     const stored = getStoredOptions();
     if (stored) setOptions(stored);
-    hasRestoredRef.current = true;
+  }, []);
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      hasRestoredRef.current = true;
+    }, 0);
+    return () => clearTimeout(id);
   }, []);
 
   useEffect(() => {
     if (!hasRestoredRef.current) return;
     storeOptions(options);
   }, [options]);
+
+  useEffect(() => {
+    const onContinue = () => {
+      storeOptions(options);
+      try {
+        sessionStorage.setItem(SCHEDULING_OPTIONS_VISITED_STORAGE_KEY, "true");
+      } catch {
+        // ignore
+      }
+      return true;
+    };
+    setContinueValidationHandler(onContinue);
+    return () => setContinueValidationHandler(null);
+  }, [options, setContinueValidationHandler]);
 
   return (
     <div className="flex-1 flex flex-col">

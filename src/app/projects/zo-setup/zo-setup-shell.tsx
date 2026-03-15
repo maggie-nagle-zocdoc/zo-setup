@@ -19,6 +19,13 @@ const SCHEDULING_EXCLUSIONS_STORAGE_KEY = "zo-setup-scheduling-exclusions";
 const SCHEDULING_OPTIONS_STORAGE_KEY = "zo-setup-scheduling-options";
 const VOICE_STORAGE_KEY = "zo-setup-voice";
 const PRE_CALL_STORAGE_KEY = "zo-setup-pre-call";
+const PROVIDER_PRONUNCIATIONS_STORAGE_KEY = "zo-setup-provider-pronunciations";
+const LOCATION_NAMES_STORAGE_KEY = "zo-setup-location-names";
+const PRONUNCIATION_VISITED_STORAGE_KEY = "zo-setup-pronunciation-visited";
+const FAQS_VISITED_STORAGE_KEY = "zo-setup-faqs-visited";
+const FAQ_ENTRIES_STORAGE_KEY = "zo-setup-faq-entries";
+const EXCLUSIONS_VISITED_STORAGE_KEY = "zo-setup-exclusions-visited";
+const SCHEDULING_OPTIONS_VISITED_STORAGE_KEY = "zo-setup-scheduling-options-visited";
 const TEST_CALL_NUMBERS_STORAGE_KEY = "zo-setup-test-call-numbers";
 
 const ZO_SETUP_STORAGE_KEYS = [
@@ -31,6 +38,13 @@ const ZO_SETUP_STORAGE_KEYS = [
   SCHEDULING_OPTIONS_STORAGE_KEY,
   VOICE_STORAGE_KEY,
   PRE_CALL_STORAGE_KEY,
+  PROVIDER_PRONUNCIATIONS_STORAGE_KEY,
+  LOCATION_NAMES_STORAGE_KEY,
+  PRONUNCIATION_VISITED_STORAGE_KEY,
+  FAQS_VISITED_STORAGE_KEY,
+  FAQ_ENTRIES_STORAGE_KEY,
+  EXCLUSIONS_VISITED_STORAGE_KEY,
+  SCHEDULING_OPTIONS_VISITED_STORAGE_KEY,
   TEST_CALL_NUMBERS_STORAGE_KEY,
 ];
 
@@ -216,16 +230,10 @@ export function ZoSetupShell({
           next.add("section-1-task-3");
         }
       }
-      const exclusionsRaw = sessionStorage.getItem(SCHEDULING_EXCLUSIONS_STORAGE_KEY);
-      if (exclusionsRaw) {
-        try {
-          const arr = JSON.parse(exclusionsRaw);
-          if (Array.isArray(arr)) next.add("section-2-task-1");
-        } catch {
-          // ignore
-        }
+      if (sessionStorage.getItem(EXCLUSIONS_VISITED_STORAGE_KEY) === "true") {
+        next.add("section-2-task-1");
       }
-      if (sessionStorage.getItem(SCHEDULING_OPTIONS_STORAGE_KEY)) {
+      if (sessionStorage.getItem(SCHEDULING_OPTIONS_VISITED_STORAGE_KEY) === "true") {
         next.add("section-2-task-2");
       }
       if (sessionStorage.getItem(VOICE_STORAGE_KEY)) {
@@ -233,6 +241,12 @@ export function ZoSetupShell({
       }
       if (sessionStorage.getItem(PRE_CALL_STORAGE_KEY)) {
         next.add("section-3-task-2");
+      }
+      if (sessionStorage.getItem(PRONUNCIATION_VISITED_STORAGE_KEY) === "true") {
+        next.add("section-3-task-3");
+      }
+      if (sessionStorage.getItem(FAQS_VISITED_STORAGE_KEY) === "true") {
+        next.add("section-3-task-4");
       }
     } catch {
       // ignore
@@ -398,7 +412,9 @@ export function ZoSetupShell({
                 "flex flex-col w-full mx-auto px-6",
                 isWelcomeStep ||
                 currentPageSlug === "section-1-task-3" ||
-                currentPageSlug === "section-2-task-1"
+                currentPageSlug === "section-2-task-1" ||
+                currentPageSlug === "section-3-task-3" ||
+                currentPageSlug === "section-3-task-4"
                   ? "max-w-[800px] min-h-full"
                   : "max-w-[648px] min-h-full"
               )}

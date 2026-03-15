@@ -41,7 +41,7 @@ export const manifest: ProjectManifest = {
     { slug: "section-2-task-1", name: "Exclusions", description: "By default Zo will be able to schedule any provider, visit reason, and location at your practice that are listed on Zocdoc", section: "section-2" },
     { slug: "section-3-task-1", name: "Voice of Zo", description: "Choose Zo's voice (male or female)", section: "section-3" },
     { slug: "section-3-task-2", name: "Pre-call messages", description: "Configure messages played before calls", section: "section-3" },
-    { slug: "section-3-task-3", name: "Pronunciation", description: "Configure pronunciation", section: "section-3" },
+    { slug: "section-3-task-3", name: "Pronunciation", description: "Configure pronunciation (optional)", section: "section-3" },
     { slug: "section-3-task-4", name: "FAQs", description: "Frequently asked questions", section: "section-3" },
     { slug: "section-3-task-5", name: "Review and submit", description: "Confirm your setup before submission", section: "review" },
     { slug: "complete", name: "You're all set", description: "Configuration submitted — what happens next", section: "complete" },

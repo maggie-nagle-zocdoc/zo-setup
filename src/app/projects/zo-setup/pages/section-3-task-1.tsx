@@ -111,6 +111,7 @@ export default function VoiceOfZoTask() {
       return false;
     }
     setContinueError(null);
+    storeVoice({ voice });
     return true;
   }, [voice]);
 
