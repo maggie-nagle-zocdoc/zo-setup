@@ -199,10 +199,11 @@ export default function PracticeInformation() {
         <div className="mt-8 flex flex-col gap-8">
           {/* Practice name */}
           <div className="flex flex-col gap-6">
-            <h2 className="text-[16px] leading-[20px] font-semibold text-[var(--text-default)] md:text-[18px] md:leading-[24px]">
-              Practice name
-            </h2>
-            <div className="rounded-2xl border border-[var(--stroke-default)] bg-[var(--background-default-white)] p-8 flex flex-col gap-0">
+            <div className="flex flex-col gap-3">
+              <h2 className="text-[16px] leading-[20px] font-semibold text-[var(--text-default)] md:text-[18px] md:leading-[24px]">
+                Listen to your practice&apos;s name
+              </h2>
+              <div className="rounded-2xl border border-[var(--stroke-default)] bg-[var(--background-default-white)] p-8 flex flex-col gap-0">
               <p className="text-[16px] leading-[26px] font-semibold text-[var(--text-default)]">
                 {practiceName}
               </p>
@@ -229,6 +230,7 @@ export default function PracticeInformation() {
                   </div>
                 </div>
               </div>
+            </div>
             </div>
 
             <div className="flex flex-col gap-3">

@@ -29,6 +29,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
   Icon,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
 } from "@/components/vibezz";
 import { cn } from "@/lib/utils";
 import { ZoSetupBackContext, ZoSetupContinueValidationContext, ZoSetupStateContext, type WorkingHours } from "../zo-setup-shell";
@@ -259,6 +262,29 @@ export default function PhoneLinesTask() {
     );
   }, []);
 
+  const addLocationsToLine = useCallback((lineId: string, indices: number[]) => {
+    if (indices.length === 0) return;
+    setContinueError(null);
+    setAddLineError(null);
+    setLineLocationErrors((prev) => {
+      const next = { ...prev };
+      delete next[lineId];
+      return next;
+    });
+    setCustomLines((prev) =>
+      prev.map((line) => {
+        if (line.id !== lineId) return line;
+        const existing = new Set(line.locationIds.map(Number));
+        const toAdd = indices.filter((idx) => !existing.has(idx)).map(String);
+        if (toAdd.length === 0) return line;
+        return {
+          ...line,
+          locationIds: [...line.locationIds, ...toAdd].sort((a, b) => Number(a) - Number(b)),
+        };
+      })
+    );
+  }, []);
+
   const removeLocationFromLine = useCallback((lineId: string, locationIndex: number) => {
     setContinueError(null);
     setLineLocationErrors((prev) => {
@@ -275,19 +301,17 @@ export default function PhoneLinesTask() {
   }, []);
 
   const [locationSearchByLineId, setLocationSearchByLineId] = useState<Record<string, string>>({});
-  const [locationSearchFocusedLineId, setLocationSearchFocusedLineId] = useState<string | null>(null);
   const [locationSearchExpandedByLineId, setLocationSearchExpandedByLineId] = useState<Record<string, boolean>>({});
-
-  const handleLocationSearchWrapperBlur = useCallback((lineId: string, e: FocusEvent<HTMLDivElement>) => {
-    const nextFocused = e.relatedTarget as Node | null;
-    if (nextFocused && e.currentTarget.contains(nextFocused)) return;
-    if (locationSearchFocusedLineId === lineId) {
-      setLocationSearchFocusedLineId(null);
-    }
-  }, [locationSearchFocusedLineId]);
+  const [locationSearchFocusedLineId, setLocationSearchFocusedLineId] = useState<string | null>(null);
 
   const toggleLocationSearch = useCallback((lineId: string) => {
     setLocationSearchExpandedByLineId((prev) => ({ ...prev, [lineId]: !prev[lineId] }));
+  }, []);
+
+  const handleLocationSearchWrapperBlur = useCallback((lineId: string, e: FocusEvent<HTMLDivElement>) => {
+    const relatedTarget = e.relatedTarget as Node | null;
+    if (relatedTarget && e.currentTarget.contains(relatedTarget)) return;
+    setLocationSearchFocusedLineId((prev) => (prev === lineId ? null : prev));
   }, []);
 
   const updateLineName = useCallback((lineId: string, name: string) => {
@@ -360,6 +384,7 @@ export default function PhoneLinesTask() {
     setCustomLines([]);
     setLocationSearchByLineId({});
     setLocationSearchExpandedByLineId({});
+    setLocationSearchFocusedLineId(null);
   }, []);
 
   useEffect(() => {
