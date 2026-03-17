@@ -277,6 +277,7 @@ export default function PracticeInformation() {
             <div className="flex flex-col gap-1">
               <h2 className="text-[16px] leading-[20px] font-semibold text-[var(--text-default)] md:text-[18px] md:leading-[24px]">
                 Additional practice names
+                <span className="text-[var(--text-whisper)] font-medium ml-1">(Optional)</span>
               </h2>
               <p className="text-[14px] leading-[20px] text-[var(--text-secondary)]">
                 This option is for practices that operate under multiple names. Do not include location names.

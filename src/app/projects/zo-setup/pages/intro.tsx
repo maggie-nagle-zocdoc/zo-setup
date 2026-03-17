@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { Section } from "@/components/vibezz";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
@@ -27,8 +28,8 @@ const STEPS = [
 
 export default function ZoSetupIntro() {
   return (
-    <div className="flex flex-1 min-h-0 w-full flex-col justify-center">
-      <div className="flex flex-col gap-5">
+    <div className="flex flex-1 min-h-0 w-full flex-col">
+      <Section size="2" className="flex flex-col gap-5">
         <h2 className="text-[24px] leading-[32px] font-semibold text-[var(--text-default)]">
           What to expect
         </h2>
@@ -56,7 +57,7 @@ export default function ZoSetupIntro() {
             </div>
           </div>
         ))}
-      </div>
+      </Section>
     </div>
   );
 }
