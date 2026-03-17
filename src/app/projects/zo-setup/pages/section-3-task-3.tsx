@@ -500,7 +500,11 @@ export default function PronunciationTask() {
               </div>
             </DrawerBody>
             <DrawerFooter>
-              <Button variant="primary" size="default" onClick={saveProvider} disabled={!providerSelectId}>
+              <Button variant="secondary" size="default" className="gap-2">
+                <Icon name="campaign" size="24" />
+                Preview voice
+              </Button>
+              <Button variant="primary" size="default" onClick={saveProvider}>
                 Save
               </Button>
             </DrawerFooter>
